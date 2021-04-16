@@ -75,7 +75,7 @@ public class CollectionApiMapping {
     MODIFY_COLLECTION(PER_COLLECTION,
         POST,
         MODIFYCOLLECTION,
-        "modify",null),
+        "modify",Utils.makeMap("collection.configName", "config")),
     MIGRATE_DOCS(PER_COLLECTION,
         POST,
         MIGRATE,

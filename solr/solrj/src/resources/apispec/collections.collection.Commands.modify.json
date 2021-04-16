@@ -10,7 +10,10 @@
     "readOnly": {
       "type": "boolean",
       "description": "Setting the readOnly attribute to true puts the collection in read-only mode, in which any index update requests are rejected. Other collection-level actions (e.g., adding / removing / moving replicas) are still available in this mode."
+    },
+    "config": {
+      "type": "string",
+      "description": "A new configset to use for the collection.  This property should only be changed with care as changing collection configuration (schema, etc.) can have unexpected side-effects, especially when the collection already has data."
     }
-
   }
 }
