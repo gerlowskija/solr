@@ -54,14 +54,14 @@ public class GCSIncrementalBackupTest extends AbstractIncrementalBackupTest {
             "    <repository name=\"trackingBackupRepository\" class=\"org.apache.solr.core.TrackingBackupRepository\"> \n" +
             "      <str name=\"delegateRepoName\">localfs</str>\n" +
             "    </repository>\n" +
-            "    <repository name=\"localfs\" class=\"org.apache.solr.gcs.LocalStorageGCSBackupRepository\"> \n" +
-            "      <str name=\"bucket\">someBucketName</str>\n" +
+            "    <repository name=\"localfs\" class=\"org.apache.solr.gcs.GCSBackupRepository\"> \n" +
+            "      <str name=\"bucket\">jegerlowtestbucket2</str>\n" +
             "      <str name=\"location\">backup1</str>\n" +
+            "      <str name=\"gcsCredentialPath\">/Users/jasongerlowski/.google_account_key</str>\n" +
             "    </repository>\n" +
             "  </backup>\n" +
             "  \n" +
             "</solr>\n";
-
     private static String backupLocation;
 
     @BeforeClass

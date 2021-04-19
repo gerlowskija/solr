@@ -17,6 +17,7 @@
 
 package org.apache.solr.gcs;
 
+import com.google.cloud.storage.BucketInfo;
 import org.apache.solr.cloud.api.collections.AbstractBackupRepositoryTest;
 import org.apache.solr.common.params.CoreAdminParams;
 import org.apache.solr.common.util.NamedList;
@@ -36,19 +37,35 @@ public class GCSBackupRepositoryTest extends AbstractBackupRepositoryTest {
         LocalStorageGCSBackupRepository.clearStashedStorage();
     }
 
+    static boolean alreadyInitd = false;
+
     @Override
     @SuppressWarnings("rawtypes")
     protected BackupRepository getRepository() {
         final NamedList<Object> config = new NamedList<>();
         config.add(CoreAdminParams.BACKUP_LOCATION, "backup1");
-        final GCSBackupRepository repository = new LocalStorageGCSBackupRepository();
+        config.add("bucket", "jegerlowtestbucket2");
+        config.add("gcsCredentialPath", "/Users/jasongerlowski/.google_account_key");
+        final GCSBackupRepository repository = new GCSBackupRepository();
         repository.init(config);
+
+        try {
+            if (!alreadyInitd) {
+                //repository.deleteDirectory(new URI("/"));
+                repository.storage.create(BucketInfo.newBuilder("jegerlowtestbucket2").build());
+                repository.createDirectory(new URI("backup1"));
+                System.exit(0);
+                alreadyInitd = true;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         return repository;
     }
 
     @Override
     protected URI getBaseUri() throws URISyntaxException {
-        return new URI("tmp");
+        return new URI("/tmp23");
     }
 }

@@ -170,6 +170,7 @@ grant {
 // additional permissions based on system properties set by /bin/solr
 // NOTE: if the property is not set, the permission entry is ignored.
 grant {
+  permission java.io.FilePermission "/Users/jasongerlowski/.google_account_key", "read";
   permission java.io.FilePermission "${hadoop.security.credential.provider.path}", "read,write,delete,readlink";
   permission java.io.FilePermission "${hadoop.security.credential.provider.path}${/}-", "read,write,delete,readlink";
 
@@ -201,6 +202,9 @@ grant {
 
   // expanded to a wildcard if set, allows all networking everywhere
   permission java.net.SocketPermission "${solr.internal.network.permission}", "accept,listen,connect,resolve";
+
+  permission java.net.SocketPermission "oauth2.googleapis.com:443", "connect,resolve";
+  permission java.net.SocketPermission "storage.googleapis.com:443", "connect,resolve";
 };
 
 // Grant all permissions to Gradle test runner classes.
