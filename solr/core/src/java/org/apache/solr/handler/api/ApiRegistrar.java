@@ -19,8 +19,10 @@ package org.apache.solr.handler.api;
 
 import org.apache.solr.api.ApiBag;
 import org.apache.solr.handler.admin.CollectionsHandler;
+import org.apache.solr.handler.admin.api.AddReplicaAPI;
 import org.apache.solr.handler.admin.api.AddReplicaPropertyAPI;
 import org.apache.solr.handler.admin.api.BalanceShardUniqueAPI;
+import org.apache.solr.handler.admin.api.CreateShardAPI;
 import org.apache.solr.handler.admin.api.DeleteCollectionAPI;
 import org.apache.solr.handler.admin.api.DeleteReplicaPropertyAPI;
 import org.apache.solr.handler.admin.api.MigrateDocsAPI;
@@ -29,6 +31,7 @@ import org.apache.solr.handler.admin.api.MoveReplicaAPI;
 import org.apache.solr.handler.admin.api.RebalanceLeadersAPI;
 import org.apache.solr.handler.admin.api.ReloadCollectionAPI;
 import org.apache.solr.handler.admin.api.SetCollectionPropertyAPI;
+import org.apache.solr.handler.admin.api.SplitShardAPI;
 
 /**
  * Registers annotation-based V2 APIs with an {@link ApiBag}
@@ -50,5 +53,11 @@ public class ApiRegistrar {
     apiBag.registerObject(new RebalanceLeadersAPI(collectionsHandler));
     apiBag.registerObject(new ReloadCollectionAPI(collectionsHandler));
     apiBag.registerObject(new SetCollectionPropertyAPI(collectionsHandler));
+  }
+
+  public static void registerShardApis(ApiBag apiBag, CollectionsHandler collectionsHandler) {
+    apiBag.registerObject(new SplitShardAPI(collectionsHandler));
+    apiBag.registerObject(new CreateShardAPI(collectionsHandler));
+    apiBag.registerObject(new AddReplicaAPI(collectionsHandler));
   }
 }
