@@ -37,6 +37,7 @@ import static org.apache.solr.client.solrj.SolrRequest.METHOD.POST;
 import static org.apache.solr.common.params.CollectionAdminParams.*;
 import static org.apache.solr.common.params.CommonParams.ACTION;
 import static org.apache.solr.handler.ClusterAPI.wrapParams;
+import static org.apache.solr.handler.api.V2ApiUtils.flattenMapWithPrefix;
 import static org.apache.solr.security.PermissionNameProvider.Name.COLL_EDIT_PERM;
 
 /**
@@ -82,14 +83,5 @@ public class CreateShardAPI {
       return String.join(",", nodeSet);
     }
     return "EMPTY";
-  }
-
-  private void flattenMapWithPrefix(Map<String, Object> toFlatten, Map<String, Object> destination,
-                                    String additionalPrefix) {
-    if (toFlatten == null || toFlatten.isEmpty() || destination == null) {
-      return;
-    }
-
-    toFlatten.forEach((k, v) -> destination.put(additionalPrefix + k, v));
   }
 }
