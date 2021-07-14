@@ -47,12 +47,11 @@ public class SplitShardPayload implements ReflectMapWriter {
   @JsonProperty
   public Boolean followAliases;
 
-  // TODO JEGERLOW Should/can this be an enum?
+  // TODO Should/can this be an enum?  Does the annotation framework have support for enums like apispec files did?
   @JsonProperty
   public String splitMethod;
 
 
-  // TODO JEGERLOW is this the same way we've done arbitrary properties elsewhere?
   @JsonProperty
   public Map<String, Object> coreProperties;
 
