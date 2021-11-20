@@ -17,23 +17,17 @@
 -->
 <web-app xmlns="http://java.sun.com/xml/ns/javaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
-         version="2.5"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0"
          metadata-complete="true"
 >
 
-  <!-- Any path (name) registered in solrconfig.xml will be sent to that filter -->
   <filter>
     <filter-name>SolrRequestFilter</filter-name>
     <filter-class>org.apache.solr.servlet.SolrDispatchFilter</filter-class>
-    <!--
-    Exclude patterns is a list of directories that would be short circuited by the 
-    SolrDispatchFilter. It includes all Admin UI related static content.
-    NOTE: It is NOT a pattern but only matches the start of the HTTP ServletPath.
-    -->
     <init-param>
       <param-name>excludePatterns</param-name>
-      <param-value>/partials/.+,/libs/.+,/css/.+,/js/.+,/img/.+,/templates/.+</param-value>
+      <param-value>/partials/.+,/libs/.+,/css/.+,/js/.+,/img/.+,/templates/.+,/vnext/.+,/vnext</param-value>
     </init-param>
   </filter>
 
@@ -46,15 +40,40 @@
     <servlet-name>LoadAdminUI</servlet-name>
     <servlet-class>org.apache.solr.servlet.LoadAdminUiServlet</servlet-class>
   </servlet>
-
   <servlet-mapping>
     <servlet-name>LoadAdminUI</servlet-name>
     <url-pattern>/index.html</url-pattern>
   </servlet-mapping>
 
+  <!--
+  <servlet>
+    <servlet-name>Test Jersey REST Service</servlet-name>
+    <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+    <init-param>
+      <param-name>jersey.config.server.provider.packages</param-name>
+      <param-value>org.apache.solr.vnext</param-value>
+    </init-param>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Test Jersey REST Service</servlet-name>
+    <url-pattern>/vnext/*</url-pattern>
+    </servlet-mapping>
+  -->
+    <servlet>
+        <servlet-name>VNext</servlet-name>
+        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>javax.ws.rs.Application</param-name>
+            <param-value>org.apache.solr.vnext.VNextApp</param-value>
+        </init-param>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>VNext</servlet-name>
+        <url-pattern>/vnext/*</url-pattern>
+    </servlet-mapping> 
+
   <mime-mapping>
     <extension>.xsl</extension>
-    <!-- per http://www.w3.org/TR/2006/PR-xslt20-20061121/ -->
     <mime-type>application/xslt+xml</mime-type>
   </mime-mapping>
 
