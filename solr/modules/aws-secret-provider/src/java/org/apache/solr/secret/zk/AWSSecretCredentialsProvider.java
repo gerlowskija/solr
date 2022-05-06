@@ -36,6 +36,9 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClientBuilde
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerException;
 
+// This class would be functionally replaced in this PR by AWSSecretManagerCredentialInjector
+// I've left it around here because I didn't want to muck around with the tests for this proof-of-concept code change
+// spun out of a review discussion
 /**
  * An implementation of {@link SecretCredentialsProvider} that retrieves Zookeeper credentials from
  * AWS Secret Manager. It expects a secret value in the following format: <code>

@@ -22,6 +22,9 @@ import org.apache.solr.common.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// This class would be functionally replaced in this PR by AWSSecretManagerCredentialInjector
+// I've left it around here because I didn't want to muck around with the tests for this proof-of-concept code change
+// spun out of a review discussion
 /**
  * A class to inject credentials into {@link DigestZkACLProvider} and {@link
  * DigestZkCredentialsProvider} from a Secret Manager. It expects a class implementing {@link
@@ -50,6 +53,9 @@ public class SecretCredentialInjector implements ZkCredentialsInjector {
         !StringUtils.isEmpty(secretNameVmParam)
             ? secretNameVmParam
             : SECRET_CREDENTIAL_PROVIDER_SECRET_NAME_DEFAULT;
+
+    log.info("Classloader instantiating SecretCredentialInjector is: " + this.getClass().getClassLoader());
+    createSecretZkDigestCredentials();
   }
 
   @Override
