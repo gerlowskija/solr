@@ -17,20 +17,22 @@
 
 package org.apache.solr.jersey;
 
-import static org.apache.solr.jersey.RequestContextConstants.HANDLER_METRICS_KEY;
-import static org.apache.solr.jersey.RequestContextConstants.SOLR_JERSEY_RESPONSE_KEY;
-import static org.apache.solr.jersey.RequestContextConstants.SOLR_QUERY_REQUEST_KEY;
-
-import java.lang.invoke.MethodHandles;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
 import org.apache.solr.handler.RequestHandlerBase;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.servlet.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+import java.lang.invoke.MethodHandles;
+
+import static org.apache.solr.jersey.RequestContextConstants.HANDLER_METRICS_KEY;
+import static org.apache.solr.jersey.RequestContextConstants.SOLR_JERSEY_RESPONSE_KEY;
+import static org.apache.solr.jersey.RequestContextConstants.SOLR_QUERY_REQUEST_KEY;
 
 /**
  * Flattens the exception an sets on a {@link SolrJerseyResponse}.
@@ -45,6 +47,11 @@ public class CatchAllExceptionMapper implements ExceptionMapper<Exception> {
 
   @Override
   public Response toResponse(Exception exception) {
+    // Exceptions coming from the JAX-RS framework itself should be handled separately.
+    if (exception instanceof WebApplicationException) {
+      return processWebApplicationException((WebApplicationException) exception);
+    }
+
     final SolrQueryRequest solrQueryRequest =
         (SolrQueryRequest) containerRequestContext.getProperty(SOLR_QUERY_REQUEST_KEY);
 
@@ -65,5 +72,9 @@ public class CatchAllExceptionMapper implements ExceptionMapper<Exception> {
     ;
     response.responseHeader.status = response.error.code;
     return Response.status(response.error.code).entity(response).build();
+  }
+
+  private Response processWebApplicationException(WebApplicationException wae) {
+    return wae.getResponse();
   }
 }
