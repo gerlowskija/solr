@@ -95,13 +95,6 @@ public class V2ClusterAPIMappingTest {
   }
 
   @Test
-  public void testListClusterAllParams() throws Exception {
-    final SolrParams v1Params = captureConvertedV1Params("/cluster", "GET", null);
-
-    assertEquals(CollectionParams.CollectionAction.LIST.lowerName, v1Params.get(ACTION));
-  }
-
-  @Test
   public void testDeleteCommandStatusAllParams() throws Exception {
     final SolrParams v1Params =
         captureConvertedV1Params("/cluster/command-status/someId", "DELETE", null);

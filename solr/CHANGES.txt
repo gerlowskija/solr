@@ -45,6 +45,9 @@ Improvements
 * SOLR-16392: A number of v2 "replica" endpoints have been updated to be more REST-ful, and hopefully, intuitive.
   ADDREPLICAPROP is now `PUT /api/collections/$coll/shards/$shard/replicas/$rep/properties/$prop {"value": $val}`
 
+* SOLR-16391: A number of v2 "collection" endpoints have been updated to be more REST-ful, and hopefully, intuitive.
+  "List collections" functionality is now only `GET /api/collections` (`GET /api/cluster` has been removed)
+
 Optimizations
 ---------------------
 (No changes)

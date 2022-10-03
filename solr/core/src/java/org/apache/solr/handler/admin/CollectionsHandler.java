@@ -77,7 +77,6 @@ import static org.apache.solr.common.params.CollectionParams.CollectionAction.DE
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.DELETESTATUS;
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.DISTRIBUTEDAPIPROCESSING;
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.FORCELEADER;
-import static org.apache.solr.common.params.CollectionParams.CollectionAction.LIST;
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.LISTALIASES;
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.LISTBACKUP;
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.LISTSNAPSHOTS;
@@ -211,6 +210,7 @@ import org.apache.solr.handler.admin.api.DeleteReplicaAPI;
 import org.apache.solr.handler.admin.api.DeleteReplicaPropertyAPI;
 import org.apache.solr.handler.admin.api.DeleteShardAPI;
 import org.apache.solr.handler.admin.api.ForceLeaderAPI;
+import org.apache.solr.handler.admin.api.ListCollectionsAPI;
 import org.apache.solr.handler.admin.api.MigrateDocsAPI;
 import org.apache.solr.handler.admin.api.ModifyCollectionAPI;
 import org.apache.solr.handler.admin.api.MoveReplicaAPI;
@@ -319,10 +319,10 @@ public class CollectionsHandler extends RequestHandlerBase implements Permission
           "Invoked Collection Action: {} with params {}", action.toLower(), req.getParamString());
     }
 
+    final RequiredSolrParams requiredParams = req.getParams().required();
     switch (action) {
       case ADDREPLICAPROP:
         // Convert query-params to v2 acceptable format
-        final RequiredSolrParams requiredParams = req.getParams().required();
         final AddReplicaPropertyAPI.AddReplicaPropertyRequestBody requestBody =
             new AddReplicaPropertyAPI.AddReplicaPropertyRequestBody();
         requestBody.value = requiredParams.get(PROPERTY_VALUE_PROP);
@@ -343,6 +343,11 @@ public class CollectionsHandler extends RequestHandlerBase implements Permission
                 trimmedPropName,
                 requestBody);
         V2ApiUtils.squashIntoSolrResponseWithoutHeader(rsp, addReplicaPropResponse);
+        break;
+      case LIST:
+        final ListCollectionsAPI.ListCollectionsResponse listCollectionsResponse =
+            new ListCollectionsAPI(coreContainer, req, rsp).listCollections();
+        V2ApiUtils.squashIntoSolrResponseWithoutHeader(rsp, listCollectionsResponse);
         break;
       default:
         CollectionOperation operation = CollectionOperation.get(action);
@@ -1265,26 +1270,6 @@ public class CollectionsHandler extends RequestHandlerBase implements Permission
           rsp.getValues().addAll(results);
           return null;
         }),
-    /** Handle list collection request. Do list collection request to zk host */
-    @SuppressWarnings({"unchecked"})
-    LIST_OP(
-        LIST,
-        (req, rsp, h) -> {
-          NamedList<Object> results = new NamedList<>();
-          Map<String, DocCollection> collections =
-              h.coreContainer
-                  .getZkController()
-                  .getZkStateReader()
-                  .getClusterState()
-                  .getCollectionsMap();
-          List<String> collectionList = new ArrayList<>(collections.keySet());
-          Collections.sort(collectionList);
-          // XXX should we add aliases here?
-          results.add("collections", collectionList);
-          SolrResponse response = new OverseerSolrResponse(results);
-          rsp.getValues().addAll(response.getResponse());
-          return null;
-        }),
     /**
      * Handle cluster status request. Can return status per specific collection/shard or per all
      * collections.
@@ -2071,7 +2056,7 @@ public class CollectionsHandler extends RequestHandlerBase implements Permission
 
   @Override
   public Collection<Class<? extends JerseyResource>> getJerseyResources() {
-    return List.of(AddReplicaPropertyAPI.class);
+    return List.of(AddReplicaPropertyAPI.class, ListCollectionsAPI.class);
   }
 
   @Override

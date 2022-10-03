@@ -25,7 +25,6 @@ import static org.apache.solr.common.params.CollectionParams.ACTION;
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.ADDROLE;
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.CLUSTERPROP;
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.DELETESTATUS;
-import static org.apache.solr.common.params.CollectionParams.CollectionAction.LIST;
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.OVERSEERSTATUS;
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.REMOVEROLE;
 import static org.apache.solr.common.params.CollectionParams.CollectionAction.REQUESTSTATUS;
@@ -207,11 +206,6 @@ public class ClusterAPI {
   @EndPoint(method = GET, path = "/cluster/overseer", permission = COLL_READ_PERM)
   public void getOverseerStatus(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
     collectionsHandler.handleRequestBody(wrapParams(req, "action", OVERSEERSTATUS.lowerName), rsp);
-  }
-
-  @EndPoint(method = GET, path = "/cluster", permission = COLL_READ_PERM)
-  public void getCluster(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
-    collectionsHandler.handleRequestBody(wrapParams(req, "action", LIST.lowerName), rsp);
   }
 
   @EndPoint(method = DELETE, path = "/cluster/command-status/{id}", permission = COLL_EDIT_PERM)
