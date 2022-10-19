@@ -78,7 +78,7 @@ s|Required |Default: none
 +
 The name of the collection to be created.
 
-`router.name`::
+`routerName`::
 +
 [%autowidth,frame=none]
 |===
