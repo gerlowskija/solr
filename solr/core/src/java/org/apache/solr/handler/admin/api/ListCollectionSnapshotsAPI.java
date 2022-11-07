@@ -111,6 +111,12 @@ public class ListCollectionSnapshotsAPI extends AdminAPIBase {
         return response;
     }
 
+    // TODO The following response classes are near duplicates of CollectionSnapshotMetaData. Merging the two classes
+    //  is trickier than it'd appear, as CollectionSnapshotMetaData is also used to represent metadata stored in ZK, and
+    //  some of the few changes made in the classes here (e.g. creationDate as a long instead of Date) would modify ZK
+    //  data parsing in a possibly breaking way.  We should find a way to resolve this after SOLR-16468 has been
+    //  completed.
+    //  Combining these classes would also greatly simplify the logic in ListCollectionSnapshotsAPI.listSnapshots above.
     public static class ListCollectionSnapshotsAPIResponse extends SolrJerseyResponse {
         @JsonProperty("snapshots")
         public Map<String,CollectionSnapshot> snapshots;
