@@ -46,6 +46,11 @@ import java.util.Map;
 import static org.apache.solr.client.solrj.impl.BinaryResponseParser.BINARY_CONTENT_TYPE_V2;
 import static org.apache.solr.security.PermissionNameProvider.Name.COLL_READ_PERM;
 
+/**
+ * V2 API for listing all snapshots associated with a specific collection.
+ *
+ * <p>This API is analogous to the v1 /admin/collections?action=LISTSNAPSHOTS command.
+ */
 @Path("/collections/{collectionName}/snapshots")
 public class ListCollectionSnapshotsAPI extends AdminAPIBase {
 
