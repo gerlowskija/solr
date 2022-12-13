@@ -50,9 +50,10 @@ public class SolrStartup {
         @TearDown(Level.Iteration)
         public void stopJettyServerIfNecessary() throws Exception {
             // Alright, This is the problem here - this method is only getting invoked at the end of 50 or so
-            // invocations of the benchmark method.  I was expecting it would be run after call to the benchmark method.
-            // Since I'm only closing 1 out of 50 or so Jetty servers that I start, we orphan just tons and tons of file
-            // handles.
+            // invocations of the benchmark method.  (See the output from running `./jmh.sh SolrStartup 2>&1 | tee output.txt`)
+            //
+            // I was expecting it would be run after call to the benchmark method. Since I'm only closing 1 out of 50 or so
+            // Jetty servers that I start, we orphan just tons and tons of file handles.
             //
             // I _think_ this is because since this file uses BenchmarkMode=THROUGHPUT, an 'iteration' is defined by a
             // certain amount of elapsed time, and JMH stuffs as many benchmark-method calls into that time window as possible.
