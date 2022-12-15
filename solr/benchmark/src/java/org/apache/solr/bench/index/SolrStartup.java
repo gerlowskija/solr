@@ -15,8 +15,8 @@ import static org.apache.solr.bench.BaseBenchState.log;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
-@Measurement(time = 30, iterations = 2, timeUnit = TimeUnit.SECONDS)
-@Threads(1)
+@Measurement(time = 120, iterations = 10, timeUnit = TimeUnit.SECONDS)
+@Threads(3)
 @Fork(value = 1)
 public class SolrStartup {
 
@@ -47,7 +47,7 @@ public class SolrStartup {
         // Ensure that JettySolrRunner is always stopped - only strictly necessary _after_ a Benchmark, but coded
         // defensively in case of changes.
         //@Setup(Level.Iteration)
-        @TearDown(Level.Iteration)
+        @TearDown(Level.Invocation)
         public void stopJettyServerIfNecessary() throws Exception {
             // Alright, This is the problem here - this method is only getting invoked at the end of 50 or so
             // invocations of the benchmark method.  (See the output from running `./jmh.sh SolrStartup 2>&1 | tee output.txt`)
@@ -62,10 +62,10 @@ public class SolrStartup {
             // @TearDown(Level.Invocation), but the Javadocs warn heavily against that option. Maybe those caveats are
             // less relevant to this not-very-micro benchmarking use-case.  Another option would be to change the
             // BenchmarkMode to SingleShotTime and cranking up the iterations; I think that would work?
-            log("In stopJettyServerifNecessary");
-            //if (solrRunner.isRunning()) {
+            //log("In stopJettyServerifNecessary");
+            if (solrRunner.isRunning()) {
                 solrRunner.stop();
-            //}
+            }
         }
 
         @TearDown(Level.Trial)
