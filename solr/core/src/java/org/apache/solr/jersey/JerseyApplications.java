@@ -23,6 +23,8 @@ import org.apache.solr.core.SolrCore;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
 
+import java.util.Map;
+
 /**
  * JAX-RS "application" configurations for Solr's {@link org.apache.solr.core.CoreContainer} and
  * {@link SolrCore} instances
@@ -38,6 +40,9 @@ public class JerseyApplications {
 
       // Request and response serialization/deserialization
       // TODO: could these be singletons to save per-request object creations?
+//        registerInstances(new MessageBodyWriters.JavabinMessageBodyWriter(),
+//                new MessageBodyWriters.XmlMessageBodyWriter(),
+//                new MessageBodyWriters.CsvMessageBodyWriter());
       register(MessageBodyWriters.JavabinMessageBodyWriter.class);
       register(MessageBodyWriters.XmlMessageBodyWriter.class);
       register(MessageBodyWriters.CsvMessageBodyWriter.class);
@@ -58,6 +63,13 @@ public class JerseyApplications {
             }
           });
 
+      setProperties(Map.of("jersey.config.server.wadl.disableWadl", "true",
+              "jersey.config.beanValidation.disable.server", "true",
+              "jersey.config.server.disableAutoDiscovery", "true",
+              "jersey.config.server.disableMetainfServicesLookup", "true",
+              "jersey.config.server.disableMoxyJson", "true",
+              "jersey.config.server.resource.validation.disable", "true",
+              "jersey.config.server.disableJsonProcessing", "true"));
       // Logging - disabled by default but useful for debugging Jersey execution
       //      setProperties(
       //          Map.of(
