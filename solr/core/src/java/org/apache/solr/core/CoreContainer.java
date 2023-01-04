@@ -1073,21 +1073,10 @@ public class CoreContainer {
       }
     }
 
+    // TODO JEGERLOW Get CoreContainer injection working again if needed
     final CoreContainer thisCCRef = this;
     // Init the Jersey app once all CC endpoints have been registered
-    containerHandlers
-        .getJerseyEndpoints()
-        .register(
-            new AbstractBinder() {
-              @Override
-              protected void configure() {
-                bindFactory(new CoreContainerFactory(thisCCRef))
-                    .to(CoreContainer.class)
-                    .in(Singleton.class);
-              }
-            });
     jerseyAppHandler = new ApplicationHandler(containerHandlers.getJerseyEndpoints());
-
     // This is a bit redundant but these are two distinct concepts for all they're accomplished at
     // the same time.
     status |= LOAD_COMPLETE | INITIAL_CORE_LOAD_COMPLETE;

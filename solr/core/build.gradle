@@ -81,13 +81,18 @@ dependencies {
 
   implementation 'javax.servlet:javax.servlet-api'
 
-  implementation "org.glassfish.jersey.containers:jersey-container-jetty-http"
-  implementation 'org.glassfish.jersey.inject:jersey-hk2'
-  implementation 'org.glassfish.jersey.media:jersey-media-json-jackson'
-  implementation 'org.glassfish.jersey.core:jersey-common'
-  implementation 'org.glassfish.jersey.core:jersey-server'
-  implementation 'org.glassfish.hk2:hk2-api'
-  implementation 'org.glassfish.hk2.external:jakarta.inject'
+  // TODO JEGERLOW Add RESTEasy deps here.
+  implementation "org.jboss.resteasy:resteasy-jaxrs-all"
+  implementation "org.jboss.resteasy:resteasy-core"
+  //implementation "org.jboss.resteasy:resteasy-servlet-initializer"
+
+  //implementation "org.glassfish.jersey.containers:jersey-container-jetty-http"
+  //implementation 'org.glassfish.jersey.inject:jersey-hk2'
+  //implementation 'org.glassfish.jersey.media:jersey-media-json-jackson'
+  //implementation 'org.glassfish.jersey.core:jersey-common'
+  //implementation 'org.glassfish.jersey.core:jersey-server'
+  //implementation 'org.glassfish.hk2:hk2-api'
+  //implementation 'org.glassfish.hk2.external:jakarta.inject'
   implementation 'jakarta.ws.rs:jakarta.ws.rs-api'
 
   // Non-API below; although there are exceptions
@@ -192,8 +197,8 @@ dependencies {
   testImplementation 'junit:junit'
   testImplementation 'org.hamcrest:hamcrest'
 
-  testImplementation 'org.glassfish.jersey.test-framework:jersey-test-framework-core'
-  testImplementation 'org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2'
+  //testImplementation 'org.glassfish.jersey.test-framework:jersey-test-framework-core'
+  //testImplementation 'org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2'
 
 
   testImplementation('org.mockito:mockito-core', {

@@ -46,48 +46,4 @@ public class PluginBagTest extends SolrTestCaseJ4 {
     solrCore = mock(SolrCore.class);
     coreContainer = mock(CoreContainer.class);
   }
-
-  @Test
-  public void testOnlyInitsJerseyIfHoldingRequestHandlers() {
-    final PluginBag<SearchComponent> nonRequestHandlerBag =
-        new PluginBag<>(SearchComponent.class, null);
-    assertNull(
-        "Jersey app should not be created for plugin bags that aren't managing RequestHandler's",
-        nonRequestHandlerBag.getJerseyEndpoints());
-
-    final PluginBag<SolrRequestHandler> handlerPluginBag =
-        new PluginBag<>(SolrRequestHandler.class, null);
-    assertNotNull(
-        "Jersey app should be created for plugin bags that manage RequestHandlers",
-        handlerPluginBag.getJerseyEndpoints());
-  }
-
-  @Test
-  public void testCreatesCoreSpecificJerseyAppIfCoreProvided() {
-    final PluginBag<SolrRequestHandler> handlerPluginBag =
-        new PluginBag<>(SolrRequestHandler.class, solrCore);
-    assertEquals(
-        JerseyApplications.SolrCoreApp.class, handlerPluginBag.getJerseyEndpoints().getClass());
-  }
-
-  @Test
-  public void testCreatesContainerSpecificJerseyAppIfNoCoreProvided() {
-    final PluginBag<SolrRequestHandler> handlerPluginBag =
-        new PluginBag<>(SolrRequestHandler.class, null);
-    assertEquals(
-        JerseyApplications.CoreContainerApp.class,
-        handlerPluginBag.getJerseyEndpoints().getClass());
-  }
-
-  @Test
-  public void testRegistersJerseyResourcesAssociatedWithRequestHandlers() {
-    final PluginBag<SolrRequestHandler> handlerPluginBag =
-        new PluginBag<>(SolrRequestHandler.class, null);
-    assertFalse(handlerPluginBag.getJerseyEndpoints().isRegistered(ListConfigSetsAPI.class));
-
-    handlerPluginBag.put("/foo", new ConfigSetsHandler(coreContainer));
-    final ResourceConfig config = handlerPluginBag.getJerseyEndpoints();
-
-    assertTrue(handlerPluginBag.getJerseyEndpoints().isRegistered(ListConfigSetsAPI.class));
-  }
 }

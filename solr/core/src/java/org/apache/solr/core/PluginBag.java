@@ -49,9 +49,10 @@ import org.apache.solr.request.SolrRequestHandler;
 import org.apache.solr.util.plugin.NamedListInitializedPlugin;
 import org.apache.solr.util.plugin.PluginInfoInitialized;
 import org.apache.solr.util.plugin.SolrCoreAware;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.core.Application;
 
 /** This manages the lifecycle of a set of plugin of the same type . */
 public class PluginBag<T> implements AutoCloseable {
@@ -64,7 +65,7 @@ public class PluginBag<T> implements AutoCloseable {
   private SolrCore core;
   private final SolrConfig.SolrPluginInfo meta;
   private final ApiBag apiBag;
-  private final ResourceConfig jerseyResources;
+  private final Application jerseyResources;
 
   public static class JerseyMetricsLookupRegistry
       extends HashMap<Class<? extends JerseyResource>, RequestHandlerBase> {}
@@ -244,7 +245,7 @@ public class PluginBag<T> implements AutoCloseable {
                 if (log.isDebugEnabled()) {
                   log.debug("Registering jersey resource class: {}", jerseyClazz.getName());
                 }
-                jerseyResources.register(jerseyClazz);
+                jerseyResources.getClasses().add(jerseyClazz);
                 // See MetricsBeanFactory javadocs for a better understanding of this resource->RH
                 // mapping
                 if (inst instanceof RequestHandlerBase) {
@@ -530,7 +531,7 @@ public class PluginBag<T> implements AutoCloseable {
     return apiBag;
   }
 
-  public ResourceConfig getJerseyEndpoints() {
+  public Application getJerseyEndpoints() {
     return jerseyResources;
   }
 }

@@ -62,6 +62,7 @@ org.glassfish.jersey*:*=2.35
 org.hamcrest:*=2.2
 org.hsqldb:hsqldb=2.4.0
 org.jctools:jctools-core=3.3.0
+org.jboss.resteasy:*=6.2.2.Final
 org.mockito:mockito-core=3.8.0
 org.openjdk.jmh:*=1.32
 org.quicktheories:quicktheories=0.26
