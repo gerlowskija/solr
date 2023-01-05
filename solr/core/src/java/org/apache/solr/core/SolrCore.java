@@ -1049,6 +1049,8 @@ public class SolrCore implements SolrInfoBean, Closeable {
     this(coreContainer, cd, configSet, null, null, null, null, false);
   }
 
+  private static Map<String, ApplicationHandler> appHandlerByConfigSetName = new HashMap<>();
+
   private SolrCore(
       CoreContainer coreContainer,
       CoreDescriptor coreDescriptor,
@@ -1134,8 +1136,12 @@ public class SolrCore implements SolrInfoBean, Closeable {
       updateProcessorChains = loadUpdateProcessorChains();
       reqHandlers = new RequestHandlers(this);
       reqHandlers.initHandlersFromConfig(solrConfig);
-      jerseyAppHandler =
-          new ApplicationHandler(reqHandlers.getRequestHandlers().getJerseyEndpoints());
+
+      // TODO JEGERLOW Make sure that this handles concurrency correctly
+      // Of course, this whole implementation is just a POC - a real implementation will need to reference-count these
+      // AppHandlers so that we can handle cores coming and going...
+      appHandlerByConfigSetName.computeIfAbsent(configSet.getName(), key -> new ApplicationHandler(reqHandlers.getRequestHandlers().getJerseyEndpoints()));
+      jerseyAppHandler = appHandlerByConfigSetName.get(configSet.getName());
 
       // cause the executor to stall so firstSearcher events won't fire
       // until after inform() has been called for all components.
