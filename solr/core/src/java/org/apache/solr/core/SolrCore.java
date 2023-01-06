@@ -1049,7 +1049,7 @@ public class SolrCore implements SolrInfoBean, Closeable {
     this(coreContainer, cd, configSet, null, null, null, null, false);
   }
 
-  private static Map<String, ApplicationHandler> appHandlerByConfigSetName = new HashMap<>();
+  private static Map<String, ApplicationHandler> appHandlerByConfigSetName = new ConcurrentHashMap<>();
 
   private SolrCore(
       CoreContainer coreContainer,
