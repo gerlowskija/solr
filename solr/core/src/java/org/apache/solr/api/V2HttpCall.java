@@ -335,25 +335,46 @@ public class V2HttpCall extends HttpSolrCall {
   }
 
   private void invokeJerseyRequest(
-      CoreContainer cores, SolrCore core, ApplicationHandler jerseyHandler, SolrQueryResponse rsp) {
-    try {
-      final ContainerRequest containerRequest =
-          ContainerRequestUtils.createContainerRequest(
-              req, response, jerseyHandler.getConfiguration());
+      CoreContainer cores,
+      SolrCore core,
+      ApplicationHandler jerseyHandler,
+      PluginBag<SolrRequestHandler> requestHandlers,
+      SolrQueryResponse rsp) {
+      invokeJerseyRequest(cores, core, jerseyHandler, requestHandlers, rsp, Map.of());
+  }
 
-      // Set properties that may be used by Jersey filters downstream
-      containerRequest.setProperty(RequestContextKeys.SOLR_QUERY_REQUEST, solrReq);
-      containerRequest.setProperty(RequestContextKeys.SOLR_QUERY_RESPONSE, rsp);
-      containerRequest.setProperty(RequestContextKeys.CORE_CONTAINER, cores);
-      containerRequest.setProperty(RequestContextKeys.HTTP_SERVLET_REQ, req);
-      containerRequest.setProperty(RequestContextKeys.REQUEST_TYPE, requestType);
-      containerRequest.setProperty(RequestContextKeys.SOLR_PARAMS, queryParams);
-      containerRequest.setProperty(RequestContextKeys.COLLECTION_LIST, collectionsList);
-      containerRequest.setProperty(RequestContextKeys.HTTP_SERVLET_RSP, response);
-      if (core != null) {
-        containerRequest.setProperty(RequestContextKeys.SOLR_CORE, core);
+  private void invokeJerseyRequest(
+      CoreContainer cores,
+      SolrCore core,
+      ApplicationHandler jerseyHandler,
+      PluginBag<SolrRequestHandler> requestHandlers,
+      SolrQueryResponse rsp,
+      Map<String, String> additionalProperties) {
+    final ContainerRequest containerRequest =
+        ContainerRequestUtils.createContainerRequest(
+            req, response, jerseyHandler.getConfiguration());
+
+    // Set properties that may be used by Jersey filters downstream
+    containerRequest.setProperty(RequestContextKeys.SOLR_QUERY_REQUEST, solrReq);
+    containerRequest.setProperty(RequestContextKeys.SOLR_QUERY_RESPONSE, rsp);
+    containerRequest.setProperty(RequestContextKeys.CORE_CONTAINER, cores);
+    containerRequest.setProperty(
+        RequestContextKeys.RESOURCE_TO_RH_MAPPING, requestHandlers.getJaxrsRegistry());
+    containerRequest.setProperty(RequestContextKeys.HTTP_SERVLET_REQ, req);
+    containerRequest.setProperty(RequestContextKeys.REQUEST_TYPE, requestType);
+    containerRequest.setProperty(RequestContextKeys.SOLR_PARAMS, queryParams);
+    containerRequest.setProperty(RequestContextKeys.COLLECTION_LIST, collectionsList);
+    containerRequest.setProperty(RequestContextKeys.HTTP_SERVLET_RSP, response);
+    if (core != null) {
+      containerRequest.setProperty(RequestContextKeys.SOLR_CORE, core);
+    }
+    if (additionalProperties != null) {
+      for (Map.Entry<String, String> entry : additionalProperties.entrySet()) {
+        containerRequest.setProperty(entry.getKey(), entry.getValue());
       }
-      servedByJaxRs = true;
+    }
+
+    try {
       jerseyHandler.handle(containerRequest);
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -363,7 +384,8 @@ public class V2HttpCall extends HttpSolrCall {
   @Override
   protected void handleAdmin(SolrQueryResponse solrResp) {
     if (api == null) {
-      invokeJerseyRequest(cores, null, cores.getJerseyApplicationHandler(), solrResp);
+      invokeJerseyRequest(
+          cores, null, cores.getJerseyApplicationHandler(), cores.getRequestHandlers(), solrResp);
     } else {
       SolrCore.preDecorateResponse(solrReq, solrResp);
       try {
@@ -379,7 +401,7 @@ public class V2HttpCall extends HttpSolrCall {
   @Override
   protected void executeCoreRequest(SolrQueryResponse rsp) {
     if (api == null) {
-      invokeJerseyRequest(cores, core, core.getJerseyApplicationHandler(), rsp);
+      invokeJerseyRequest(cores, core, core.getJerseyApplicationHandler(), core.getRequestHandlers(), rsp);
     } else {
       SolrCore.preDecorateResponse(solrReq, rsp);
       try {

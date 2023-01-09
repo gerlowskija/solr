@@ -17,9 +17,9 @@
 
 package org.apache.solr.jersey;
 
-import org.apache.solr.core.PluginBag;
 import org.apache.solr.core.SolrCore;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
+import org.glassfish.jersey.process.internal.RequestScoped;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import javax.inject.Singleton;
@@ -32,7 +32,7 @@ import java.util.Map;
 public class JerseyApplications {
 
   public static class CoreContainerApp extends ResourceConfig {
-    public CoreContainerApp(PluginBag.JerseyMetricsLookupRegistry beanRegistry) {
+    public CoreContainerApp() {
       super();
 
       // Authentication and authorization
@@ -45,20 +45,13 @@ public class JerseyApplications {
       register(MessageBodyWriters.CsvMessageBodyWriter.class);
       register(SolrJacksonMapper.class);
 
+
+
       // Request lifecycle logic
       register(CatchAllExceptionMapper.class);
       register(RequestMetricHandling.PreRequestMetricsFilter.class);
       register(RequestMetricHandling.PostRequestMetricsFilter.class);
       register(PostRequestDecorationFilter.class);
-      register(
-          new AbstractBinder() {
-            @Override
-            protected void configure() {
-              bindFactory(new MetricBeanFactory(beanRegistry))
-                  .to(PluginBag.JerseyMetricsLookupRegistry.class)
-                  .in(Singleton.class);
-            }
-          });
 
         setProperties(Map.of(
                 "jersey.config.server.wadl.disableWadl", "true",
@@ -69,28 +62,23 @@ public class JerseyApplications {
                 "jersey.config.server.disableMoxyJson", "true",
                 "jersey.config.server.resource.validation.disable", "true"
         ));
-
-      // Logging - disabled by default but useful for debugging Jersey execution
-      //      setProperties(
-      //          Map.of(
-      //              "jersey.config.server.tracing.type",
-      //              "ALL",
-      //              "jersey.config.server.tracing.threshold",
-      //              "VERBOSE"));
     }
   }
 
   public static class SolrCoreApp extends CoreContainerApp {
 
-    public SolrCoreApp(SolrCore solrCore, PluginBag.JerseyMetricsLookupRegistry beanRegistry) {
-      super(beanRegistry);
+    public SolrCoreApp() {
+      super();
 
       // Dependency Injection for Jersey resources
       register(
           new AbstractBinder() {
             @Override
             protected void configure() {
-              bindFactory(new SolrCoreFactory(solrCore)).to(SolrCore.class).in(Singleton.class);
+
+              bindFactory(InjectionFactories.SolrCoreFactory.class)
+                  .to(SolrCore.class)
+                  .in(RequestScoped.class);
             }
           });
     }

@@ -130,6 +130,8 @@ import org.apache.solr.handler.api.ApiRegistrar;
 import org.apache.solr.handler.component.ShardHandlerFactory;
 import org.apache.solr.handler.designer.SchemaDesignerAPI;
 import org.apache.solr.jersey.CoreContainerFactory;
+import org.apache.solr.jersey.InjectionFactories;
+import org.apache.solr.jersey.JerseyAppHandlerCache;
 import org.apache.solr.logging.LogWatcher;
 import org.apache.solr.logging.MDCLoggingContext;
 import org.apache.solr.metrics.SolrCoreMetricManager;
@@ -192,9 +194,14 @@ public class CoreContainer {
       new PluginBag<>(SolrRequestHandler.class, null);
 
   private volatile ApplicationHandler jerseyAppHandler;
+  private volatile JerseyAppHandlerCache appHandlersByConfigSetId;
 
   public ApplicationHandler getJerseyApplicationHandler() {
     return jerseyAppHandler;
+  }
+
+  public JerseyAppHandlerCache getAppHandlerCache() {
+    return appHandlersByConfigSetId;
   }
 
   /** Minimize exposure to CoreContainer. Mostly only ZK interface is required */
@@ -1087,6 +1094,7 @@ public class CoreContainer {
               }
             });
     jerseyAppHandler = new ApplicationHandler(containerHandlers.getJerseyEndpoints());
+    appHandlersByConfigSetId = new JerseyAppHandlerCache();
 
     // This is a bit redundant but these are two distinct concepts for all they're accomplished at
     // the same time.
