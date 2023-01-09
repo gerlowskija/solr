@@ -109,6 +109,7 @@ import org.apache.solr.handler.RequestHandlerBase;
 import org.apache.solr.handler.SolrConfigHandler;
 import org.apache.solr.handler.component.HighlightComponent;
 import org.apache.solr.handler.component.SearchComponent;
+import org.apache.solr.jersey.JerseyAppHandlerCache;
 import org.apache.solr.logging.MDCLoggingContext;
 import org.apache.solr.metrics.SolrCoreMetricManager;
 import org.apache.solr.metrics.SolrMetricProducer;
@@ -224,7 +225,7 @@ public class SolrCore implements SolrInfoBean, Closeable {
   private final Date startTime = new Date();
   private final long startNanoTime = System.nanoTime();
   private final RequestHandlers reqHandlers;
-  private final ApplicationHandler jerseyAppHandler;
+  private final RefCounted<ApplicationHandler> appHandlerForConfigSet;
   private final PluginBag<SearchComponent> searchComponents =
       new PluginBag<>(SearchComponent.class, this);
   private final PluginBag<UpdateRequestProcessorFactory> updateProcessors =
@@ -1135,8 +1136,19 @@ public class SolrCore implements SolrInfoBean, Closeable {
       updateProcessorChains = loadUpdateProcessorChains();
       reqHandlers = new RequestHandlers(this);
       reqHandlers.initHandlersFromConfig(solrConfig);
-      jerseyAppHandler =
-          new ApplicationHandler(reqHandlers.getRequestHandlers().getJerseyEndpoints());
+      final String effectiveConfigsetId = JerseyAppHandlerCache.generateIdForConfigSet(configSet);
+      appHandlerForConfigSet =
+          coreContainer
+              .getAppHandlerCache()
+              .computeIfAbsent(
+                  effectiveConfigsetId,
+                  () -> {
+                    log.debug(
+                        "Creating Jersey ApplicationHandler for 'effective configset' [{}]",
+                        effectiveConfigsetId);
+                    return new ApplicationHandler(
+                        reqHandlers.getRequestHandlers().getJerseyEndpoints());
+                  });
 
       // cause the executor to stall so firstSearcher events won't fire
       // until after inform() has been called for all components.
@@ -1772,6 +1784,7 @@ public class SolrCore implements SolrInfoBean, Closeable {
     }
 
     if (reqHandlers != null) reqHandlers.close();
+    appHandlerForConfigSet.decref();
     responseWriters.close();
     searchComponents.close();
     qParserPlugins.close();
@@ -1959,7 +1972,7 @@ public class SolrCore implements SolrInfoBean, Closeable {
   }
 
   public ApplicationHandler getJerseyApplicationHandler() {
-    return jerseyAppHandler;
+    return appHandlerForConfigSet.get();
   }
 
   /**
@@ -3387,8 +3400,8 @@ public class SolrCore implements SolrInfoBean, Closeable {
         if (solrCore == null || solrCore.isClosed() || solrCore.getCoreContainer().isShutDown())
           return;
         cfg = solrCore.getSolrConfig();
-        solrConfigversion = solrCore.getSolrConfig().getOverlay().getZnodeVersion();
-        overlayVersion = solrCore.getSolrConfig().getZnodeVersion();
+        solrConfigversion = solrCore.getSolrConfig().getZnodeVersion();
+        overlayVersion = solrCore.getSolrConfig().getOverlay().getVersion();
         if (managedSchmaResourcePath != null) {
           managedSchemaVersion =
               ((ManagedIndexSchema) solrCore.getLatestSchema()).getSchemaZkVersion();
