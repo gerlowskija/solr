@@ -36,13 +36,21 @@ import org.apache.solr.handler.RequestHandlerBase;
 import org.apache.solr.request.SolrQueryRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 /**
  * A request and response filter used to initialize and report per-request metrics.
  *
- * <p>Currently, JAX-RS v2 APIs rely on a {@link
- * org.apache.solr.handler.RequestHandlerBase.HandlerMetrics} instance from an associated request
- * handler.
+ * <p>Currently, Jersey resources that have a corresponding v1 API produce the same metrics as their
+ * v1 equivalent and rely on the v1 requestHandler instance to do so. Solr facilitates this by
+ * building a map of the JAX-RS resources to requestHandler mapping (a {@link
+ * org.apache.solr.core.PluginBag.JerseyMetricsLookupRegistry}), and using that to look up the associated request
+ * handler (if one exists) in pre- and post- filters
+ *
+ * <p>This isn't ideal, as requestHandler's don't really "fit" conceptually here. But it's
+ * unavoidable while we want our v2 APIs to exactly match the metrics produced by v1 calls, and while
+ * metrics are bundled in with requestHandlers as they are currently.
+ *
+ * @see RequestMetricHandling.PreRequestMetricsFilter
+ * @see RequestMetricHandling.PostRequestMetricsFilter
  */
 public class RequestMetricHandling {
 

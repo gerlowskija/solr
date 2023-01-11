@@ -71,6 +71,10 @@ public class PluginBag<T> implements AutoCloseable {
 
   private final JerseyMetricsLookupRegistry infoBeanByResource;
 
+  public JerseyMetricsLookupRegistry getJaxrsRegistry() {
+    return infoBeanByResource;
+  }
+
   /** Pass needThreadSafety=true if plugins can be added and removed concurrently with lookups. */
   public PluginBag(Class<T> klass, SolrCore core, boolean needThreadSafety) {
     if (klass == SolrRequestHandler.class) {
