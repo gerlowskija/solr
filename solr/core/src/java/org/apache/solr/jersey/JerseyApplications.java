@@ -28,6 +28,8 @@ import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.process.internal.RequestScoped;
 import org.glassfish.jersey.server.ResourceConfig;
 
+import java.util.Map;
+
 /**
  * JAX-RS "application" configurations for Solr's {@link org.apache.solr.core.CoreContainer} and
  * {@link SolrCore} instances
@@ -79,7 +81,17 @@ public class JerseyApplications {
                   .in(RequestScoped.class);
             }
           });
-      // Logging - disabled by default but useful for debugging Jersey execution
+
+        setProperties(Map.of(
+                "jersey.config.server.wadl.disableWadl", "true",
+                "jersey.config.beanValidation.disable.server", "true",
+                "jersey.config.server.disableAutoDiscovery", "true",
+                "jersey.config.server.disableJsonProcessing", "true",
+                "jersey.config.server.disableMetainfServicesLookup", "true",
+                "jersey.config.server.disableMoxyJson", "true",
+                "jersey.config.server.resource.validation.disable", "true"
+        ));
+        // Logging - disabled by default but useful for debugging Jersey execution
       //      setProperties(
       //          Map.of(
       //              "jersey.config.server.tracing.type",
