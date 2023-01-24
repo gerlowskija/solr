@@ -1494,6 +1494,11 @@ public class ReplicationHandler extends RequestHandlerBase implements SolrCoreAw
             currentIndexFetcher.destroy();
           }
         }
+
+        @Override
+        public String toString() {
+          return "startShutdownHook(" + this + ")";
+        }
       };
   private final CloseHook finishShutdownHook =
       new CloseHook() {
@@ -1503,6 +1508,11 @@ public class ReplicationHandler extends RequestHandlerBase implements SolrCoreAw
           if (restoreFuture != null) {
             restoreFuture.cancel(false);
           }
+        }
+
+        @Override
+        public String toString() {
+          return "finishShutdownHook(" + this + ")";
         }
       };
 

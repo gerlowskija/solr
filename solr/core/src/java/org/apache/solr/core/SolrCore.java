@@ -1925,6 +1925,7 @@ public class SolrCore implements SolrInfoBean, Closeable {
 
   /** Add a close callback hook */
   public void addCloseHook(CloseHook hook) {
+    log.info("JEGERLOW Adding new close hook {} for core {}", hook, this);
     if (closeHooks == null) {
       closeHooks = new ArrayList<>();
     }
@@ -1934,6 +1935,7 @@ public class SolrCore implements SolrInfoBean, Closeable {
   /** Remove a close callback hook */
   public void removeCloseHook(CloseHook hook) {
     if (closeHooks != null) {
+      log.info("JEGERLOW Removing close hook {} for core {}", hook, this);
       closeHooks.remove(hook);
     }
   }

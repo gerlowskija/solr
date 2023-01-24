@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.apache.solr.SolrTestCaseJ4.SuppressSSL;
 import org.apache.solr.client.solrj.SolrClient;
@@ -41,6 +42,7 @@ import org.apache.solr.common.cloud.Replica;
 import org.apache.solr.common.cloud.Slice;
 import org.apache.solr.common.cloud.ZkStateReader;
 import org.apache.solr.common.util.TimeSource;
+import org.apache.solr.core.CloseHook;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.embedded.JettySolrRunner;
 import org.apache.solr.util.TestInjection;
@@ -108,7 +110,7 @@ public class TestPullReplicaErrorHandling extends SolrCloudTestCase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    collectionName = suggestedCollectionName();
+    collectionName = suggestedCollectionName() + UUID.randomUUID().toString();
     expectThrows(SolrException.class, () -> getCollectionState(collectionName));
     cluster.getSolrClient().setDefaultCollection(collectionName);
     cluster.waitForAllNodes(30);
@@ -253,14 +255,21 @@ public class TestPullReplicaErrorHandling extends SolrCloudTestCase {
     Slice s = docCollection.getSlices().iterator().next();
     JettySolrRunner jetty = getJettyForReplica(s.getReplicas(EnumSet.of(Replica.Type.PULL)).get(0));
     SolrCore core = jetty.getCoreContainer().getCores().iterator().next();
+    log.info("The core in question is {}", core);
 
     for (int i = 0; i < (TEST_NIGHTLY ? 5 : 2); i++) {
+      log.info("JEGERLOW Restarting loop");
       cluster.expireZkSession(jetty);
+      log.info("JEGERLOW: Finished session-expiry");
       waitForState(
           "Expecting node to be disconnected", collectionName, activeReplicaCount(1, 0, 0));
       waitForState("Expecting node to reconnect", collectionName, activeReplicaCount(1, 0, 1));
       // We have two active ReplicationHandler with two close hooks each, one for triggering
       // recovery and one for doing interval polling
+      for (CloseHook hook : core.getCloseHooks()) {
+        log.info("  JEGERLOW Before assert, have registered hook: {}", hook);
+      }
+      //Thread.sleep(10*1000);
       assertEquals(5, core.getCloseHooks().size());
     }
   }
