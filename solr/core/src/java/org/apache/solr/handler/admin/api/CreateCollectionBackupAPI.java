@@ -198,7 +198,9 @@ public class CreateCollectionBackupAPI extends AdminAPIBase {
     return createBackupApi.createCollectionBackup(collectionName, backupName, requestBody);
   }
 
-  public static String getLocation(CoreContainer coreContainer, BackupRepository repository, String location) throws IOException {
+  public static String getLocation(
+      CoreContainer coreContainer, BackupRepository repository, String location)
+      throws IOException {
     location = repository.getBackupLocation(location);
     if (location != null) {
       return location;
