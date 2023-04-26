@@ -44,11 +44,20 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static org.apache.solr.client.solrj.impl.BinaryResponseParser.BINARY_CONTENT_TYPE_V2;
 import static org.apache.solr.client.solrj.request.beans.V2ApiConstants.CREATE_COLLECTION_KEY;
 import static org.apache.solr.cloud.Overseer.QUEUE_OPERATION;
 import static org.apache.solr.common.cloud.ZkStateReader.COLLECTION_PROP;
+import static org.apache.solr.common.params.CollectionAdminParams.COLL_CONF;
+import static org.apache.solr.common.params.CollectionAdminParams.CREATE_NODE_SET_PARAM;
+import static org.apache.solr.common.params.CollectionAdminParams.CREATE_NODE_SET_SHUFFLE_PARAM;
+import static org.apache.solr.common.params.CollectionAdminParams.NRT_REPLICAS;
+import static org.apache.solr.common.params.CollectionAdminParams.PROPERTY_PREFIX;
+import static org.apache.solr.common.params.CollectionAdminParams.PULL_REPLICAS;
+import static org.apache.solr.common.params.CollectionAdminParams.REPLICATION_FACTOR;
+import static org.apache.solr.common.params.CollectionAdminParams.TLOG_REPLICAS;
 import static org.apache.solr.common.params.CommonAdminParams.ASYNC;
 import static org.apache.solr.common.params.CommonParams.NAME;
 import static org.apache.solr.common.params.CoreAdminParams.BACKUP_ID;
@@ -64,11 +73,13 @@ import static org.apache.solr.security.PermissionNameProvider.Name.COLL_EDIT_PER
  */
 @Path("/backups/{backupName}/restore")
 public class RestoreCollectionAPI extends AdminAPIBase {
+
+  private static final Set<String> CREATE_PARAM_ALLOWLIST = Set.of(COLL_CONF, REPLICATION_FACTOR, NRT_REPLICAS, TLOG_REPLICAS, PULL_REPLICAS, CREATE_NODE_SET_PARAM, CREATE_NODE_SET_SHUFFLE_PARAM);
+
   @Inject
   public RestoreCollectionAPI(CoreContainer coreContainer, SolrQueryRequest solrQueryRequest, SolrQueryResponse solrQueryResponse) {
     super(coreContainer, solrQueryRequest, solrQueryResponse);
   }
-
 
   @POST
   @Produces({"application/json", "application/xml", BINARY_CONTENT_TYPE_V2})
@@ -145,14 +156,20 @@ public class RestoreCollectionAPI extends AdminAPIBase {
     return response;
   }
 
-  public static ZkNodeProps createRemoteMessage(String backupName, RestoreCollectionRequestBody requestBody) throws Exception {
+  public static ZkNodeProps createRemoteMessage(String backupName, RestoreCollectionRequestBody requestBody) {
     final Map<String, Object> remoteMessage = requestBody.toMap(new HashMap<>());
 
     // If the RESTORE is setup to create a new collection, copy those parameters first
     final var createReqBody = requestBody.createCollectionParams;
     if (createReqBody != null) {
-      final var createMessage = CreateCollectionAPI.createRemoteMessage(createReqBody);
-      remoteMessage.putAll(createMessage.getProperties());
+      // RESTORE only supports a subset of collection-creation params, so filter by those when constructing the remote message
+      remoteMessage.remove("create-collection");
+      CreateCollectionAPI.createRemoteMessage(createReqBody)
+              .getProperties()
+              .entrySet()
+              .stream()
+              .filter(e -> CREATE_PARAM_ALLOWLIST.contains(e.getKey()) || e.getKey().startsWith(PROPERTY_PREFIX))
+              .forEach(e -> remoteMessage.put(e.getKey(), e.getValue()));
     }
 
     // Copy restore-specific parameters
