@@ -18,6 +18,7 @@
 package org.apache.solr.jersey;
 
 import static org.apache.solr.common.params.CommonParams.LOG_PARAMS_LIST;
+import static org.apache.solr.jersey.MessageBodyReaders.CachingDelegatingMessageBodyReader.DESERIALIZED_REQUEST_BODY_KEY;
 import static org.apache.solr.jersey.PostRequestLoggingFilter.PRIORITY;
 import static org.apache.solr.jersey.RequestContextKeys.SOLR_QUERY_REQUEST;
 
@@ -88,12 +89,14 @@ public class PostRequestLoggingFilter implements ContainerResponseFilter {
 
     final Logger requestLogger = (solrConfig != null) ? coreRequestLogger : nonCoreRequestLogger;
     final String templatedPath = buildTemplatedPath();
+    final String bodyVal = buildRequestBodyString(requestContext);
     requestLogger.info(
         MarkerFactory.getMarker(templatedPath),
-        "method={} path={} query-params={{}} status={} QTime={}",
+        "method={} path={} query-params={{}} entity={} status={} QTime={}",
         requestContext.getMethod(),
         templatedPath,
         filterAndStringifyQueryParameters(requestContext.getUriInfo()),
+        bodyVal,
         response.responseHeader.status,
         response.responseHeader.qTime);
 
@@ -104,7 +107,7 @@ public class PostRequestLoggingFilter implements ContainerResponseFilter {
         && response.responseHeader.qTime >= solrConfig.slowQueryThresholdMillis) {
       slowCoreRequestLogger.warn(
           MarkerFactory.getMarker(templatedPath),
-          "method={} path={} query-params={{}} status={} QTime={}",
+          "method={} path={} query-params={{}} entity={} status={} QTime={}",
           requestContext.getMethod(),
           templatedPath,
           filterAndStringifyQueryParameters(requestContext.getUriInfo()),
@@ -123,6 +126,26 @@ public class PostRequestLoggingFilter implements ContainerResponseFilter {
 
     return String.format(Locale.ROOT, "%s%s", classPathAnnotationVal, methodPathAnnotationVal)
         .replaceAll("//", "/");
+  }
+
+  private String buildRequestBodyString(ContainerRequestContext requestContext) {
+    if (requestContext.getProperty(DESERIALIZED_REQUEST_BODY_KEY) == null) {
+      return "{}";
+    }
+
+    if (!(requestContext.getProperty(DESERIALIZED_REQUEST_BODY_KEY)
+        instanceof JacksonReflectMapWriter)) {
+      log.warn(
+          "Encountered unexpected request-body type {} for request {}; only {} expected.",
+          requestContext.getProperty(DESERIALIZED_REQUEST_BODY_KEY).getClass().getName(),
+          requestContext.getUriInfo().getPath(),
+          JacksonReflectMapWriter.class.getName());
+      return "{}";
+    }
+
+    return ((JacksonReflectMapWriter) requestContext.getProperty(DESERIALIZED_REQUEST_BODY_KEY))
+        .jsonStr()
+        .replace("\n", "");
   }
 
   private String filterAndStringifyQueryParameters(UriInfo uriInfo) {
