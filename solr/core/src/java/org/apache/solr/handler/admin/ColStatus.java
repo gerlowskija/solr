@@ -17,10 +17,14 @@
 
 package org.apache.solr.handler.admin;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +45,8 @@ import org.apache.solr.common.cloud.ZkStateReader;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.util.NamedList;
-import org.apache.solr.common.util.SimpleOrderedMap;
+import org.apache.solr.handler.api.V2ApiUtils;
+import org.apache.solr.jersey.JacksonReflectMapWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,8 +76,77 @@ public class ColStatus {
     this.clusterState = clusterState;
   }
 
-  @SuppressWarnings({"unchecked"})
-  public void getColStatus(NamedList<Object> results) {
+  public static class CollectionStatusSummary implements JacksonReflectMapWriter {
+    @JsonProperty public Integer znodeVersion;
+
+    @JsonProperty
+    public Map<String, Object>
+        properties; // 'Object' necessary both because of integer props (e.g. nrtReplicas) and
+    // compound props (e.g. router)
+
+    @JsonProperty public Integer activeShards;
+    @JsonProperty public Integer inactiveShards;
+    @JsonProperty public Set<String> schemaNonCompliant;
+    @JsonProperty public Map<String, ShardSummary> shards;
+  }
+
+  public static class ShardSummary implements JacksonReflectMapWriter {
+    @JsonProperty public String state;
+    @JsonProperty public String range;
+    @JsonProperty public Map<String, RoutingRule> routingRules;
+    @JsonProperty public ReplicaStateSummary replicas;
+    @JsonProperty public LeaderSummary leader;
+  }
+
+  public static class ReplicaStateSummary implements JacksonReflectMapWriter {
+    @JsonProperty public Integer total;
+    @JsonProperty public Integer active;
+    @JsonProperty public Integer down;
+    @JsonProperty public Integer recovering;
+    @JsonProperty public Integer recovery_failed;
+  }
+
+  public static class LeaderSummary implements JacksonReflectMapWriter {
+    @JsonProperty public String coreNode;
+    @JsonProperty public String core;
+    @JsonProperty public String leader; // TODO Should this be a Boolean?
+
+    @JsonProperty("node_name")
+    public String nodeName;
+
+    @JsonProperty("base_url")
+    public String baseUrl;
+
+    @JsonProperty public String state;
+    @JsonProperty public String type;
+
+    @JsonProperty("force_set_state")
+    public String forceSetState;
+    //    @JsonProperty public Map<String, SegmentInfoSummary> segInfos;
+    @JsonProperty public Map<String, Object> segInfos;
+
+    private Map<String, Object> unknownFields = new HashMap<>();
+
+    @JsonAnyGetter
+    public Map<String, Object> unknownProperties() {
+      return unknownFields;
+    }
+
+    @JsonAnySetter
+    public void setUnknownProperty(String field, Object value) {
+      unknownFields.put(field, value);
+    }
+  }
+
+  //  public static class SegmentInfoSummary implements JacksonReflectMapWriter {
+  //    @JsonProperty public String commitLuceneVersion;
+  //    @JsonProperty public Integer numSegments;
+  //    @JsonProperty public String segmentsFileName;
+  //    @JsonProperty public Integer totalMaxDoc; // Long?
+  //    @JsonProperty public Object userData; // NOCOMMIT: What is this supposed to hold?
+  //  }
+
+  public Map<String, CollectionStatusSummary> getColStatus() {
     Collection<String> collections;
     String col = props.getStr(ZkStateReader.COLLECTION_PROP);
     if (col == null) {
@@ -96,27 +170,29 @@ public class ColStatus {
     if (withFieldInfo || withSizeInfo) {
       withSegments = true;
     }
+
+    final Map<String, CollectionStatusSummary> multiCollectionSummary = new HashMap<>();
     for (String collection : collections) {
       DocCollection coll = clusterState.getCollectionOrNull(collection);
       if (coll == null) {
         continue;
       }
-      SimpleOrderedMap<Object> colMap = new SimpleOrderedMap<>();
-      colMap.add("znodeVersion", coll.getZNodeVersion());
+      final var colMap = new CollectionStatusSummary();
+      colMap.znodeVersion = coll.getZNodeVersion();
       Map<String, Object> props = new TreeMap<>(coll.getProperties());
       props.remove("shards");
-      colMap.add("properties", props);
-      colMap.add("activeShards", coll.getActiveSlices().size());
-      colMap.add("inactiveShards", coll.getSlices().size() - coll.getActiveSlices().size());
-      results.add(collection, colMap);
+      colMap.properties = props;
+      colMap.activeShards = coll.getActiveSlices().size();
+      colMap.inactiveShards = coll.getSlices().size() - coll.getActiveSlices().size();
+      multiCollectionSummary.put(collection, colMap);
 
       Set<String> nonCompliant = new TreeSet<>();
 
-      SimpleOrderedMap<Object> shards = new SimpleOrderedMap<>();
+      colMap.shards = new HashMap<>();
       for (Slice s : coll.getSlices()) {
-        SimpleOrderedMap<Object> sliceMap = new SimpleOrderedMap<>();
-        shards.add(s.getName(), sliceMap);
-        SimpleOrderedMap<Object> replicaMap = new SimpleOrderedMap<>();
+        final var sliceMap = new ShardSummary();
+        colMap.shards.put(s.getName(), sliceMap);
+        final var replicaMap = new ReplicaStateSummary();
         int totalReplicas = s.getReplicas().size();
         int activeReplicas = 0;
         int downReplicas = 0;
@@ -143,20 +219,21 @@ public class ColStatus {
               break;
           }
         }
-        replicaMap.add("total", totalReplicas);
-        replicaMap.add("active", activeReplicas);
-        replicaMap.add("down", downReplicas);
-        replicaMap.add("recovering", recoveringReplicas);
-        replicaMap.add("recovery_failed", recoveryFailedReplicas);
-        sliceMap.add("state", s.getState().toString());
+        replicaMap.total = totalReplicas;
+        replicaMap.active = activeReplicas;
+        replicaMap.down = downReplicas;
+        replicaMap.recovering = recoveringReplicas;
+        replicaMap.recovery_failed = recoveryFailedReplicas;
+        sliceMap.state = s.getState().toString();
         if (s.getRange() != null) {
-          sliceMap.add("range", s.getRange().toString());
+          sliceMap.range = s.getRange().toString();
         }
+        // TODO NOCOMMIT JEGERLOW - RoutingRule still needs Jackson-ified
         Map<String, RoutingRule> rules = s.getRoutingRules();
         if (rules != null && !rules.isEmpty()) {
-          sliceMap.add("routingRules", rules);
+          sliceMap.routingRules = rules;
         }
-        sliceMap.add("replicas", replicaMap);
+        sliceMap.replicas = replicaMap;
         Replica leader = s.getLeader();
         if (leader == null) { // pick the first one
           leader = s.getReplicas().size() > 0 ? s.getReplicas().iterator().next() : null;
@@ -164,10 +241,10 @@ public class ColStatus {
         if (leader == null) {
           continue;
         }
-        SimpleOrderedMap<Object> leaderMap = new SimpleOrderedMap<>();
-        sliceMap.add("leader", leaderMap);
-        leaderMap.add("coreNode", leader.getName());
-        leaderMap.addAll(leader.getProperties());
+        final var leaderMap = new LeaderSummary();
+        sliceMap.leader = leaderMap;
+        leaderMap.coreNode = leader.getName();
+        leaderMap.unknownProperties().putAll(leader.getProperties());
         if (!leader.isActive(clusterState.getLiveNodes())) {
           continue;
         }
@@ -190,7 +267,20 @@ public class ColStatus {
           QueryRequest req = new QueryRequest(params);
           NamedList<Object> rsp = client.request(req);
           rsp.remove("responseHeader");
-          leaderMap.add("segInfos", rsp);
+          // TODO NOCOMMIT JEGERLOW - this is about where I'm petering out for the day.  I've done a
+          //  decent job of representing the colstatus response, except for this last part where we
+          //  take the response from an /admin/segments call and attach a trimmed down copy of it to
+          //  the structured response here.  Obviously this is difficult to do at this point.  My
+          // next
+          //  step is to do the structured JAX-RS response thing for /admin/segments, and then I can
+          //  find a way to convert the NamedList here into that strongly typed response.
+          // (ObjectMapper?
+          //  V2ApiUtils?)  Should I put this whole PR on hold until /admin/segments is done?
+          // Should
+          //  I do both APIs in the same PR?  Or should I do the bare minimum /admin/segments thing
+          // here
+          //  and just model the response for usage here?
+          leaderMap.segInfos = rsp;
           NamedList<?> segs = (NamedList<?>) rsp.get("segments");
           if (segs != null) {
             for (Map.Entry<String, ?> entry : segs) {
@@ -222,8 +312,14 @@ public class ColStatus {
       if (nonCompliant.isEmpty()) {
         nonCompliant.add("(NONE)");
       }
-      colMap.add("schemaNonCompliant", nonCompliant);
-      colMap.add("shards", shards);
+      colMap.schemaNonCompliant = nonCompliant;
     }
+    return null;
+  }
+
+  @SuppressWarnings({"unchecked"})
+  public void getColStatus(NamedList<Object> results) {
+    final var summary = getColStatus();
+    V2ApiUtils.squashIntoNamedListWithoutHeader(results, summary);
   }
 }

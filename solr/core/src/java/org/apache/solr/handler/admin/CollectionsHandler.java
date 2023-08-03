@@ -1366,6 +1366,7 @@ public class CollectionsHandler extends RequestHandlerBase implements Permission
         CreateReplicaAPI.class,
         AddReplicaPropertyAPI.class,
         BalanceShardUniqueAPI.class,
+        CollectionStatusAPI.class,
         CreateAliasAPI.class,
         CreateCollectionAPI.class,
         CreateCollectionBackupAPI.class,
@@ -1404,7 +1405,6 @@ public class CollectionsHandler extends RequestHandlerBase implements Permission
     apis.addAll(AnnotatedApi.getApis(new ModifyCollectionAPI(this)));
     apis.addAll(AnnotatedApi.getApis(new MoveReplicaAPI(this)));
     apis.addAll(AnnotatedApi.getApis(new RebalanceLeadersAPI(this)));
-    apis.addAll(AnnotatedApi.getApis(new CollectionStatusAPI(this)));
     return apis;
   }
 

@@ -17,21 +17,19 @@
 
 package org.apache.solr.handler.admin.api;
 
-import static org.apache.solr.client.solrj.SolrRequest.METHOD.GET;
-import static org.apache.solr.common.params.CommonParams.ACTION;
-import static org.apache.solr.common.params.CoreAdminParams.COLLECTION;
-import static org.apache.solr.handler.ClusterAPI.wrapParams;
+import static org.apache.solr.client.solrj.impl.BinaryResponseParser.BINARY_CONTENT_TYPE_V2;
 import static org.apache.solr.security.PermissionNameProvider.Name.COLL_READ_PERM;
 
-import java.lang.invoke.MethodHandles;
-import org.apache.solr.api.EndPoint;
-import org.apache.solr.common.cloud.ZkStateReader;
-import org.apache.solr.common.params.CollectionParams;
-import org.apache.solr.handler.admin.CollectionsHandler;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import org.apache.solr.core.CoreContainer;
+import org.apache.solr.jersey.PermissionName;
+import org.apache.solr.jersey.SolrJerseyResponse;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * V2 API for displaying basic information about a single collection.
@@ -39,27 +37,34 @@ import org.slf4j.LoggerFactory;
  * <p>This API (GET /v2/collections/collectionName) is analogous to the v1
  * /admin/collections?action=CLUSTERSTATUS&amp;collection=collectionName command.
  */
-public class CollectionStatusAPI {
-  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+@Path("/collections/{collName}")
+public class CollectionStatusAPI extends AdminAPIBase {
 
-  private final CollectionsHandler collectionsHandler;
-
-  public CollectionStatusAPI(CollectionsHandler collectionsHandler) {
-    this.collectionsHandler = collectionsHandler;
+  public CollectionStatusAPI(
+      CoreContainer coreContainer,
+      SolrQueryRequest solrQueryRequest,
+      SolrQueryResponse solrQueryResponse) {
+    super(coreContainer, solrQueryRequest, solrQueryResponse);
   }
 
-  @EndPoint(
-      path = {"/c/{collection}", "/collections/{collection}"},
-      method = GET,
-      permission = COLL_READ_PERM)
-  public void getCollectionStatus(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
-    req =
-        wrapParams(
-            req, // 'req' can have a 'shard' param
-            ACTION,
-            CollectionParams.CollectionAction.CLUSTERSTATUS.toString(),
-            COLLECTION,
-            req.getPathTemplateValues().get(ZkStateReader.COLLECTION_PROP));
-    collectionsHandler.handleRequestBody(req, rsp);
+  @GET
+  @Produces({"application/json", "application/xml", BINARY_CONTENT_TYPE_V2})
+  @PermissionName(COLL_READ_PERM)
+  public SolrJerseyResponse foo(
+      @PathParam("collName") String collectionName,
+      @QueryParam("coreInfo") Boolean coreInfo,
+      @QueryParam("segments") Boolean segments,
+      @QueryParam("fieldInfo") Boolean fieldInfo,
+      @QueryParam("rawSize") Boolean rawSize,
+      @QueryParam("rawSizeSummary") Boolean rawSizeSummary,
+      @QueryParam("rawSizeDetails") Boolean rawSizeDetails,
+      @QueryParam("rawSizeSamplingPercent") Float rawSizeSamplingPercent,
+      @QueryParam("sizeInfo") String sizeInfo) {
+    final var response = instantiateJerseyResponse(SolrJerseyResponse.class);
+    fetchAndValidateZooKeeperAwareCoreContainer();
+    recordCollectionForLogAndTracing(collectionName, solrQueryRequest);
+
+    // TODO Reformat inputs and invoke ColStatus
+    return response;
   }
 }
