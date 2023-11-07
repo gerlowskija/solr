@@ -145,6 +145,11 @@ public class {{classname}} {
             }
 
             @Override
+            public SolrRequest.ApiVersion getApiVersion() {
+              return ApiVersion.V2;
+            }
+
+            @Override
             public SolrParams getParams() {
               final ModifiableSolrParams params = new ModifiableSolrParams();
               {{#queryParams}}

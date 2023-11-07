@@ -64,6 +64,11 @@ public class V2Request extends SolrRequest<V2Response> implements MapWriter {
   }
 
   @Override
+  public SolrRequest.ApiVersion getApiVersion() {
+    return ApiVersion.V2;
+  }
+
+  @Override
   public SolrParams getParams() {
     return solrParams;
   }

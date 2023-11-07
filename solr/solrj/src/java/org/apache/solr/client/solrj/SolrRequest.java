@@ -52,6 +52,11 @@ public abstract class SolrRequest<T extends SolrResponse> implements Serializabl
     DELETE
   };
 
+  public enum ApiVersion {
+    V1,
+    V2
+  }
+
   public enum SolrRequestType {
     QUERY,
     UPDATE,
@@ -168,6 +173,15 @@ public abstract class SolrRequest<T extends SolrResponse> implements Serializabl
 
   public void setQueryParams(Set<String> queryParams) {
     this.queryParams = queryParams;
+  }
+
+  /**
+   * Identifies the API version accessed through {@link SolrRequest}
+   *
+   * @lucene.experimental may change as v2 API support evolves
+   */
+  public SolrRequest.ApiVersion getApiVersion() {
+    return ApiVersion.V1;
   }
 
   /** This method defines the type of this Solr request. */
