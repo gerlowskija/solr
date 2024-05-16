@@ -84,8 +84,21 @@ public class TestDistribFileStore extends SolrCloudTestCase {
             .configure();
     try {
 
+      postFile(
+              cluster.getSolrClient(),
+              getFileContent("runtimecode/runtimelibs.jar.bin"),
+              "/package/mypkg/v1.0/runtimelibs.jar",
+              null);
+
+      V2Response rsp1 =
+              new V2Request.Builder("/node/files/package/mypkg/v1.0/runtimelibs.jar?meta=true")
+                      .withMethod(SolrRequest.METHOD.GET)
+                      .forceV2(true)
+                      .build()
+                      .process(cluster.getSolrClient());
+      System.out.println(rsp1);
       byte[] derFile = readFile("cryptokeys/pub_key512.der");
-      uploadKey(derFile, FileStoreAPI.KEYS_DIR + "/pub_key512.der", cluster);
+      uploadKey(derFile, ClusterFileStoreAPI.KEYS_DIR + "/pub_key512.der", cluster);
 
       try {
         postFile(
@@ -336,7 +349,9 @@ public class TestDistribFileStore extends SolrCloudTestCase {
       throws SolrServerException, IOException {
     String resource = "/cluster/files" + name;
     ModifiableSolrParams params = new ModifiableSolrParams();
-    params.add("sig", sig);
+    if (sig != null) {
+      params.add("sig", sig);
+    }
     V2Response rsp =
         new V2Request.Builder(resource)
             .withMethod(SolrRequest.METHOD.PUT)
