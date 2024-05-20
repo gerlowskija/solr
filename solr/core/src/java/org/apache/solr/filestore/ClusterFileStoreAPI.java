@@ -17,7 +17,17 @@
 
 package org.apache.solr.filestore;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import jakarta.inject.Inject;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.api.JerseyResource;
@@ -40,18 +50,8 @@ import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.invoke.MethodHandles;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-// TODO JEGERLOW NOCOMMIT Rename this class to be more in line with other JAX-RS implementation classes.
+// TODO JEGERLOW NOCOMMIT Rename this class to be more in line with other JAX-RS implementation
+// classes.
 public class ClusterFileStoreAPI extends JerseyResource implements ClusterFileStoreApis {
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   public static final String FILESTORE_DIRECTORY = "filestore";
@@ -59,14 +59,17 @@ public class ClusterFileStoreAPI extends JerseyResource implements ClusterFileSt
   public static final String KEYS_DIR = "/_trusted_/keys";
   static final String TMP_ZK_NODE = "/fileStoreWriteInProgress";
 
-
   private final CoreContainer coreContainer;
   private final SolrQueryRequest req;
   private final SolrQueryResponse rsp;
   private final FileStore fileStore;
 
   @Inject
-  public ClusterFileStoreAPI(CoreContainer coreContainer, DistribFileStore fileStore, SolrQueryRequest req, SolrQueryResponse rsp) {
+  public ClusterFileStoreAPI(
+      CoreContainer coreContainer,
+      DistribFileStore fileStore,
+      SolrQueryRequest req,
+      SolrQueryResponse rsp) {
     this.coreContainer = coreContainer;
     this.req = req;
     this.rsp = rsp;
@@ -75,16 +78,18 @@ public class ClusterFileStoreAPI extends JerseyResource implements ClusterFileSt
 
   @Override
   @PermissionName(PermissionNameProvider.Name.FILESTORE_WRITE_PERM)
-  public UploadToFileStoreResponse uploadFile(String filePath, List<String> sig, InputStream requestBody) {
+  public UploadToFileStoreResponse uploadFile(
+      String filePath, List<String> sig, InputStream requestBody) {
     final var response = instantiateJerseyResponse(UploadToFileStoreResponse.class);
+    log.info("JEGERLOW: Path is: {}", filePath);
     if (!coreContainer.getPackageLoader().getPackageAPI().isEnabled()) {
       throw new RuntimeException(PackageAPI.ERR_MSG);
     }
     try {
       coreContainer
-              .getZkController()
-              .getZkClient()
-              .create(TMP_ZK_NODE, "true".getBytes(UTF_8), CreateMode.EPHEMERAL, true);
+          .getZkController()
+          .getZkClient()
+          .create(TMP_ZK_NODE, "true".getBytes(UTF_8), CreateMode.EPHEMERAL, true);
 
       if (requestBody == null)
         throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, "no payload");
@@ -100,23 +105,23 @@ public class ClusterFileStoreAPI extends JerseyResource implements ClusterFileSt
         if (type == FileStore.FileType.FILE) {
           // a file already exist at the same path
           fileStore.get(
-                  filePath,
-                  fileEntry -> {
-                    if (meta.equals(fileEntry.meta)) {
-                      // the file content is same too. this is an idempotent put
-                      // do not throw an error
-                      response.file = filePath;
-                      response.message = "File with same metadata exists ";
-                    }
-                  },
-                  true);
+              filePath,
+              fileEntry -> {
+                if (meta.equals(fileEntry.meta)) {
+                  // the file content is same too. this is an idempotent put
+                  // do not throw an error
+                  response.file = filePath;
+                  response.message = "File with same metadata exists ";
+                }
+              },
+              true);
           // 'message' only set in the "already exists w/ same content" case, so we're done!
           if (response.message != null) {
             return response;
           }
         } else if (type != FileStore.FileType.NOFILE) {
           throw new SolrException(
-                  SolrException.ErrorCode.BAD_REQUEST, "Path already exists " + filePath);
+              SolrException.ErrorCode.BAD_REQUEST, "Path already exists " + filePath);
         }
 
         fileStore.put(new FileStore.FileEntry(ByteBuffer.wrap(buf), meta, filePath));
@@ -128,7 +133,7 @@ public class ClusterFileStoreAPI extends JerseyResource implements ClusterFileSt
       log.error("Unexpected error", e);
     } catch (KeeperException.NodeExistsException e) {
       throw new SolrException(
-              SolrException.ErrorCode.SERVER_ERROR, "A write is already in process , try later");
+          SolrException.ErrorCode.SERVER_ERROR, "A write is already in process , try later");
     } catch (KeeperException e) {
       log.error("Unexpected error", e);
       throw new SolrException(SolrException.ErrorCode.SERVER_ERROR, e.getMessage());
@@ -153,9 +158,9 @@ public class ClusterFileStoreAPI extends JerseyResource implements ClusterFileSt
 
     try {
       coreContainer
-              .getZkController()
-              .getZkClient()
-              .create(TMP_ZK_NODE, "true".getBytes(UTF_8), CreateMode.EPHEMERAL, true);
+          .getZkController()
+          .getZkClient()
+          .create(TMP_ZK_NODE, "true".getBytes(UTF_8), CreateMode.EPHEMERAL, true);
       validateName(filePath, true);
       if (coreContainer.getPackageLoader().getPackageAPI().isJarInuse(filePath)) {
         throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, "jar in use, can't delete");
@@ -163,7 +168,7 @@ public class ClusterFileStoreAPI extends JerseyResource implements ClusterFileSt
       FileStore.FileType type = fileStore.getType(filePath, true);
       if (type == FileStore.FileType.NOFILE) {
         throw new SolrException(
-                SolrException.ErrorCode.BAD_REQUEST, "Path does not exist: " + filePath);
+            SolrException.ErrorCode.BAD_REQUEST, "Path does not exist: " + filePath);
       }
       fileStore.delete(filePath);
       return response;
@@ -182,7 +187,7 @@ public class ClusterFileStoreAPI extends JerseyResource implements ClusterFileSt
   }
 
   private List<String> readSignatures(List<String> signatures, byte[] buf)
-          throws SolrException, IOException {
+      throws SolrException, IOException {
     if (signatures == null || signatures.isEmpty()) return null;
     fileStore.refresh(KEYS_DIR);
     validate(signatures, buf);
@@ -193,25 +198,25 @@ public class ClusterFileStoreAPI extends JerseyResource implements ClusterFileSt
     Map<String, byte[]> keys = fileStore.getKeys();
     if (keys == null || keys.isEmpty()) {
       throw new SolrException(
-              SolrException.ErrorCode.BAD_REQUEST, "File store does not have any keys");
+          SolrException.ErrorCode.BAD_REQUEST, "File store does not have any keys");
     }
     CryptoKeys cryptoKeys = null;
     try {
       cryptoKeys = new CryptoKeys(keys);
     } catch (Exception e) {
       throw new SolrException(
-              SolrException.ErrorCode.SERVER_ERROR, "Error parsing public keys in file store");
+          SolrException.ErrorCode.SERVER_ERROR, "Error parsing public keys in file store");
     }
     for (String sig : sigs) {
       if (cryptoKeys.verify(sig, ByteBuffer.wrap(buf)) == null) {
         throw new SolrException(
-                SolrException.ErrorCode.BAD_REQUEST,
-                "Signature does not match any public key : "
-                        + sig
-                        + " len: "
-                        + buf.length
-                        + " content sha512: "
-                        + DigestUtils.sha512Hex(buf));
+            SolrException.ErrorCode.BAD_REQUEST,
+            "Signature does not match any public key : "
+                + sig
+                + " len: "
+                + buf.length
+                + " content sha512: "
+                + DigestUtils.sha512Hex(buf));
       }
     }
   }
@@ -232,6 +237,8 @@ public class ClusterFileStoreAPI extends JerseyResource implements ClusterFileSt
     return new MetaData(vals);
   }
 
+  // TODO JEGERLOW NOCOMMIT - nuke the 'writeMap'/MapWriter aspect of this once I can validate its
+  // not used.
   public static class MetaData implements MapWriter {
     public static final String SHA512 = "sha512";
     String sha512;

@@ -49,8 +49,8 @@ import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.Utils;
 import org.apache.solr.core.BlobRepository;
-import org.apache.solr.filestore.DistribFileStore;
 import org.apache.solr.filestore.ClusterFileStoreAPI;
+import org.apache.solr.filestore.DistribFileStore;
 import org.apache.solr.packagemanager.SolrPackage.Manifest;
 import org.apache.solr.util.SolrJacksonAnnotationInspector;
 

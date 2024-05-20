@@ -24,28 +24,33 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.QueryParam;
+import java.io.InputStream;
+import java.util.List;
 import org.apache.solr.client.api.model.SolrJerseyResponse;
 import org.apache.solr.client.api.model.UploadToFileStoreResponse;
 
-import java.io.InputStream;
-import java.util.List;
-
 @Path("/cluster")
 public interface ClusterFileStoreApis {
-    // TODO Better understand the purpose of the 'sig' parameter and improve docs here.
-    @PUT
-    @Operation(
-            summary = "Upload a file to the filestore.",
-            tags = {"file-store"})
-    @Path("/files{filePath:.+}")
-    UploadToFileStoreResponse uploadFile(@Parameter(description = "File store path") @PathParam("filePath") String filePath,
-                                         @Parameter(description = "Signature(s) for the file being uploaded") @QueryParam("sig") List<String> sig,
-                                         @Parameter(description = "File content to be stored in the filestore") @RequestBody InputStream requestBody);
+  // TODO Better understand the purpose of the 'sig' parameter and improve docs here.
+  @PUT
+  @Operation(
+      summary = "Upload a file to the filestore.",
+      tags = {"file-store"})
+  @Path("/files{filePath:.+}")
+  UploadToFileStoreResponse uploadFile(
+      @Parameter(description = "File store path") @PathParam("filePath") String filePath,
+      @Parameter(description = "Signature(s) for the file being uploaded") @QueryParam("sig")
+          List<String> sig,
+      @Parameter(description = "File content to be stored in the filestore") @RequestBody
+          InputStream requestBody);
 
-    @DELETE
-    @Operation(
-            summary = "Delete a file or directory from the filestore.",
-            tags = {"file-store"})
-    @Path("/files{path:.+}")
-    SolrJerseyResponse deleteFile(@Parameter(description = "Path to a file or directory within the filestore") @PathParam("path") String path);
+  @DELETE
+  @Operation(
+      summary = "Delete a file or directory from the filestore.",
+      tags = {"file-store"})
+  @Path("/files{path:.+}")
+  SolrJerseyResponse deleteFile(
+      @Parameter(description = "Path to a file or directory within the filestore")
+          @PathParam("path")
+          String path);
 }

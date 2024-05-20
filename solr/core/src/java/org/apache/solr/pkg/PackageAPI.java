@@ -272,7 +272,8 @@ public class PackageAPI {
         payload.addError("No files specified");
         return;
       }
-      FileStoreUtils.validateFiles(coreContainer.getFileStore(), add.files, true, s -> payload.addError(s));
+      FileStoreUtils.validateFiles(
+          coreContainer.getFileStore(), add.files, true, s -> payload.addError(s));
       if (payload.hasError()) return;
       Packages[] finalState = new Packages[1];
       try {

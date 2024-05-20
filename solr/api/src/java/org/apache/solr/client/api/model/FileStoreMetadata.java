@@ -19,5 +19,5 @@ package org.apache.solr.client.api.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class FileStoreMetadata {
-    @JsonProperty public String name;
+  @JsonProperty public String name;
 }

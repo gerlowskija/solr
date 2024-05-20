@@ -22,34 +22,35 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
 import org.apache.solr.client.api.model.ReadFileStoreResponse;
 import org.apache.solr.client.api.model.SolrJerseyResponse;
 
 /** V2 API definitions for storing, retrieving, and inspecting filestore contents. */
-@Path("/node/files")
+@Path("/node")
 public interface NodeFileStoreApis {
 
+  @GET
+  @Operation(
+      summary = "Retrieve file contents or metadata from the filestore.",
+      tags = {"file-store"})
+  // @Produces({"application/vnd.apache.solr.raw", MediaType.APPLICATION_JSON})
+  @Path("/files{path:.*}")
+  ReadFileStoreResponse readFileStoreEntry(
+      @Parameter(description = "File store path") @PathParam("path") String path,
+      @QueryParam("sync") Boolean sync,
+      @QueryParam("getFrom") String getFrom,
+      @QueryParam("meta") Boolean meta);
 
-
-    @GET
-    @Operation(
-            summary = "Retrieve file contents or metadata from the filestore.",
-            tags = {"file-store"})
-    //@Produces({"application/vnd.apache.solr.raw", MediaType.APPLICATION_JSON})
-    @Path("{path:.+}")
-    ReadFileStoreResponse readFileStoreEntry(@Parameter(description = "File store path") @PathParam("path") String path,
-                                             @QueryParam("sync") Boolean sync,
-                                             @QueryParam("getFrom") String getFrom,
-                                             @QueryParam("meta") Boolean meta);
-
-    // TODO Better understand the difference between deleteFile and deleteFileLocal and improve docs here.
-    @DELETE
-    @Operation(
-            summary = "Delete a (local) file or directory from the filestore.",
-            tags = {"file-store"})
-    @Path("{path:.+}")
-    SolrJerseyResponse deleteFileLocal(@Parameter(description = "Path to a file or directory within the filestore") @PathParam("path") String path);
+  // TODO Better understand the difference between deleteFile and deleteFileLocal and improve docs
+  // here.
+  @DELETE
+  @Operation(
+      summary = "Delete a (local) file or directory from the filestore.",
+      tags = {"file-store"})
+  @Path("/files{path:.+}")
+  SolrJerseyResponse deleteFileLocal(
+      @Parameter(description = "Path to a file or directory within the filestore")
+          @PathParam("path")
+          String path);
 }

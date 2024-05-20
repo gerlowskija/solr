@@ -16,14 +16,6 @@
  */
 package org.apache.solr.filestore;
 
-import org.apache.solr.common.SolrException;
-import org.apache.solr.common.util.StrUtils;
-import org.apache.solr.core.BlobRepository;
-import org.apache.solr.core.CoreContainer;
-import org.apache.solr.util.CryptoKeys;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
@@ -34,139 +26,146 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.apache.solr.common.SolrException;
+import org.apache.solr.common.util.StrUtils;
+import org.apache.solr.core.BlobRepository;
+import org.apache.solr.core.CoreContainer;
+import org.apache.solr.util.CryptoKeys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Common utilities used by filestore-related code.
- */
+/** Common utilities used by filestore-related code. */
 public class FileStoreUtils {
-    private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    /** get a list of nodes randomly shuffled * @lucene.internal */
-    public static ArrayList<String> shuffledNodes(CoreContainer coreContainer) {
-        Set<String> liveNodes =
-                coreContainer.getZkController().getZkStateReader().getClusterState().getLiveNodes();
-        ArrayList<String> l = new ArrayList<>(liveNodes);
-        l.remove(coreContainer.getZkController().getNodeName());
-        Collections.shuffle(l, BlobRepository.RANDOM);
-        return l;
+  /** get a list of nodes randomly shuffled * @lucene.internal */
+  public static ArrayList<String> shuffledNodes(CoreContainer coreContainer) {
+    Set<String> liveNodes =
+        coreContainer.getZkController().getZkStateReader().getClusterState().getLiveNodes();
+    ArrayList<String> l = new ArrayList<>(liveNodes);
+    l.remove(coreContainer.getZkController().getNodeName());
+    Collections.shuffle(l, BlobRepository.RANDOM);
+    return l;
+  }
+
+  private static final String INVALIDCHARS = " /\\#&*\n\t%@~`=+^$><?{}[]|:;!";
+
+  public static void validateName(String path, boolean failForTrusted) {
+    if (path == null) {
+      throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, "empty path");
     }
-
-    private static final String INVALIDCHARS = " /\\#&*\n\t%@~`=+^$><?{}[]|:;!";
-
-    public static void validateName(String path, boolean failForTrusted) {
-        if (path == null) {
-            throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, "empty path");
-        }
-        List<String> parts = StrUtils.splitSmart(path, '/', true);
-        for (String part : parts) {
-            if (part.charAt(0) == '.') {
-                throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, "cannot start with period");
-            }
-            for (int i = 0; i < part.length(); i++) {
-                for (int j = 0; j < INVALIDCHARS.length(); j++) {
-                    if (part.charAt(i) == INVALIDCHARS.charAt(j))
-                        throw new SolrException(
-                                SolrException.ErrorCode.BAD_REQUEST, "Unsupported char in file name: " + part);
-                }
-            }
-        }
-        if (failForTrusted && ClusterFileStoreAPI.TRUSTED_DIR.equals(parts.get(0))) {
+    List<String> parts = StrUtils.splitSmart(path, '/', true);
+    for (String part : parts) {
+      if (part.charAt(0) == '.') {
+        throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, "cannot start with period");
+      }
+      for (int i = 0; i < part.length(); i++) {
+        for (int j = 0; j < INVALIDCHARS.length(); j++) {
+          if (part.charAt(i) == INVALIDCHARS.charAt(j))
             throw new SolrException(
-                    SolrException.ErrorCode.BAD_REQUEST, "trying to write into /_trusted_/ directory");
+                SolrException.ErrorCode.BAD_REQUEST, "Unsupported char in file name: " + part);
         }
+      }
     }
-
-    public static void validateFiles(FileStore fileStore, List<String> files, boolean validateSignatures, Consumer<String> errs) {
-        for (String path : files) {
-            try {
-                FileStore.FileType type = fileStore.getType(path, true);
-                if (type != FileStore.FileType.FILE) {
-                    errs.accept("No such file: " + path);
-                    continue;
-                }
-
-                fileStore.get(
-                        path,
-                        entry -> {
-                            if (entry.getMetaData().signatures == null
-                                    || entry.getMetaData().signatures.isEmpty()) {
-                                errs.accept(path + " has no signature");
-                                return;
-                            }
-                            if (validateSignatures) {
-                                try {
-                                    fileStore.refresh(ClusterFileStoreAPI.KEYS_DIR);
-                                    validate(fileStore, entry.meta.signatures, entry, false);
-                                } catch (Exception e) {
-                                    log.error("Error validating package artifact", e);
-                                    errs.accept(e.getMessage());
-                                }
-                            }
-                        },
-                        false);
-            } catch (Exception e) {
-                log.error("Error reading file ", e);
-                errs.accept("Error reading file " + path + " " + e.getMessage());
-            }
-        }
+    if (failForTrusted && ClusterFileStoreAPI.TRUSTED_DIR.equals(parts.get(0))) {
+      throw new SolrException(
+          SolrException.ErrorCode.BAD_REQUEST, "trying to write into /_trusted_/ directory");
     }
+  }
 
-    /**
-     * Validate a file for signature
-     *
-     * @param sigs the signatures. atleast one should succeed
-     * @param entry The file details
-     * @param isFirstAttempt If there is a failure
-     */
-    public static void validate(FileStore fileStore, List<String> sigs, FileStore.FileEntry entry, boolean isFirstAttempt)
-            throws SolrException, IOException {
-        if (!isFirstAttempt) {
-            // we are retrying because last validation failed.
-            // get all keys again and try again
-            fileStore.refresh(ClusterFileStoreAPI.KEYS_DIR);
+  public static void validateFiles(
+      FileStore fileStore, List<String> files, boolean validateSignatures, Consumer<String> errs) {
+    for (String path : files) {
+      try {
+        FileStore.FileType type = fileStore.getType(path, true);
+        if (type != FileStore.FileType.FILE) {
+          errs.accept("No such file: " + path);
+          continue;
         }
 
-        Map<String, byte[]> keys = fileStore.getKeys();
-        if (keys == null || keys.isEmpty()) {
-            if (isFirstAttempt) {
-                validate(fileStore, sigs, entry, false);
+        fileStore.get(
+            path,
+            entry -> {
+              if (entry.getMetaData().signatures == null
+                  || entry.getMetaData().signatures.isEmpty()) {
+                errs.accept(path + " has no signature");
                 return;
-            }
-            throw new SolrException(
-                    SolrException.ErrorCode.BAD_REQUEST, "Filestore does not have any public keys");
-        }
-        CryptoKeys cryptoKeys = null;
-        try {
-            cryptoKeys = new CryptoKeys(keys);
-        } catch (Exception e) {
-            throw new SolrException(
-                    SolrException.ErrorCode.SERVER_ERROR, "Error parsing public keys in ZooKeeper");
-        }
-        for (String sig : sigs) {
-            Supplier<String> errMsg =
-                    () ->
-                            "Signature does not match any public key : "
-                                    + sig
-                                    + "sha256 "
-                                    + entry.getMetaData().sha512;
-            if (entry.getBuffer() != null) {
-                if (cryptoKeys.verify(sig, entry.getBuffer()) == null) {
-                    if (isFirstAttempt) {
-                        validate(fileStore, sigs, entry, false);
-                        return;
-                    }
-                    throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, errMsg.get());
+              }
+              if (validateSignatures) {
+                try {
+                  fileStore.refresh(ClusterFileStoreAPI.KEYS_DIR);
+                  validate(fileStore, entry.meta.signatures, entry, false);
+                } catch (Exception e) {
+                  log.error("Error validating package artifact", e);
+                  errs.accept(e.getMessage());
                 }
-            } else {
-                InputStream inputStream = entry.getInputStream();
-                if (cryptoKeys.verify(sig, inputStream) == null) {
-                    if (isFirstAttempt) {
-                        validate(fileStore, sigs, entry, false);
-                        return;
-                    }
-                    throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, errMsg.get());
-                }
-            }
-        }
+              }
+            },
+            false);
+      } catch (Exception e) {
+        log.error("Error reading file ", e);
+        errs.accept("Error reading file " + path + " " + e.getMessage());
+      }
     }
+  }
+
+  /**
+   * Validate a file for signature
+   *
+   * @param sigs the signatures. atleast one should succeed
+   * @param entry The file details
+   * @param isFirstAttempt If there is a failure
+   */
+  public static void validate(
+      FileStore fileStore, List<String> sigs, FileStore.FileEntry entry, boolean isFirstAttempt)
+      throws SolrException, IOException {
+    if (!isFirstAttempt) {
+      // we are retrying because last validation failed.
+      // get all keys again and try again
+      fileStore.refresh(ClusterFileStoreAPI.KEYS_DIR);
+    }
+
+    Map<String, byte[]> keys = fileStore.getKeys();
+    if (keys == null || keys.isEmpty()) {
+      if (isFirstAttempt) {
+        validate(fileStore, sigs, entry, false);
+        return;
+      }
+      throw new SolrException(
+          SolrException.ErrorCode.BAD_REQUEST, "Filestore does not have any public keys");
+    }
+    CryptoKeys cryptoKeys = null;
+    try {
+      cryptoKeys = new CryptoKeys(keys);
+    } catch (Exception e) {
+      throw new SolrException(
+          SolrException.ErrorCode.SERVER_ERROR, "Error parsing public keys in ZooKeeper");
+    }
+    for (String sig : sigs) {
+      Supplier<String> errMsg =
+          () ->
+              "Signature does not match any public key : "
+                  + sig
+                  + "sha256 "
+                  + entry.getMetaData().sha512;
+      if (entry.getBuffer() != null) {
+        if (cryptoKeys.verify(sig, entry.getBuffer()) == null) {
+          if (isFirstAttempt) {
+            validate(fileStore, sigs, entry, false);
+            return;
+          }
+          throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, errMsg.get());
+        }
+      } else {
+        InputStream inputStream = entry.getInputStream();
+        if (cryptoKeys.verify(sig, inputStream) == null) {
+          if (isFirstAttempt) {
+            validate(fileStore, sigs, entry, false);
+            return;
+          }
+          throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, errMsg.get());
+        }
+      }
+    }
+  }
 }

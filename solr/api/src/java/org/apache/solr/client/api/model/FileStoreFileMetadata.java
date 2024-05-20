@@ -16,14 +16,30 @@
  */
 package org.apache.solr.client.api.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class FileStoreFileMetadata extends FileStoreMetadata {
 
-    @JsonProperty public Long size;
-    @JsonProperty public Date timestamp;
-    @JsonProperty public Boolean isDir;
+  @JsonProperty public Long size;
+  @JsonProperty public Date timestamp;
+  @JsonProperty public String sha512;
+  @JsonProperty public List<String> sig;
 
+  public Map<String, Object> extraProperties = new HashMap<>();
+
+  @JsonAnyGetter
+  public Map<String, Object> getExtraProperties() {
+    return extraProperties;
+  }
+
+  @JsonAnySetter
+  public void setExtraProperty(String field, Object value) {
+    extraProperties.put(field, value);
+  }
 }

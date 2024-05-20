@@ -18,8 +18,6 @@ package org.apache.solr.client.api.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class UploadToFileStoreResponse extends SolrJerseyResponse {
-
-  @JsonProperty public String file;
-  @JsonProperty public String message;
+public class FileStoreDirectoryMetadata {
+  @JsonProperty public Boolean isDir = true;
 }

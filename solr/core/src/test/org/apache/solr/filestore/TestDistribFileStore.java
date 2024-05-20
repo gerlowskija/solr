@@ -85,17 +85,17 @@ public class TestDistribFileStore extends SolrCloudTestCase {
     try {
 
       postFile(
-              cluster.getSolrClient(),
-              getFileContent("runtimecode/runtimelibs.jar.bin"),
-              "/package/mypkg/v1.0/runtimelibs.jar",
-              null);
+          cluster.getSolrClient(),
+          getFileContent("runtimecode/runtimelibs.jar.bin"),
+          "/package/mypkg/v1.0/runtimelibs.jar",
+          null);
 
       V2Response rsp1 =
-              new V2Request.Builder("/node/files/package/mypkg/v1.0/runtimelibs.jar?meta=true")
-                      .withMethod(SolrRequest.METHOD.GET)
-                      .forceV2(true)
-                      .build()
-                      .process(cluster.getSolrClient());
+          new V2Request.Builder("/node/files/package/mypkg/v1.0/runtimelibs.jar?meta=true")
+              .withMethod(SolrRequest.METHOD.GET)
+              .forceV2(true)
+              .build()
+              .process(cluster.getSolrClient());
       System.out.println(rsp1);
       byte[] derFile = readFile("cryptokeys/pub_key512.der");
       uploadKey(derFile, ClusterFileStoreAPI.KEYS_DIR + "/pub_key512.der", cluster);

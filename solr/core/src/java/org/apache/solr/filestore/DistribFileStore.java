@@ -246,12 +246,6 @@ public class DistribFileStore implements FileStore {
       return false;
     }
 
-    String getSimpleName() {
-      int idx = path.lastIndexOf('/');
-      if (idx == -1) return path;
-      return path.substring(idx + 1);
-    }
-
     public Path realPath() {
       return getRealpath(path);
     }
@@ -295,6 +289,7 @@ public class DistribFileStore implements FileStore {
           return realPath().toFile().length();
         }
 
+        // TODO JEGERLOW NOCOMMIT - make sure this isn't called and nuke
         @Override
         public void writeMap(EntryWriter ew) throws IOException {
           MetaData metaData = readMetaData();
@@ -307,6 +302,13 @@ public class DistribFileStore implements FileStore {
           ew.put("size", size());
           ew.put("timestamp", getTimeStamp());
           if (metaData != null) metaData.writeMap(ew);
+        }
+
+        @Override
+        public String getSimpleName() {
+          int idx = path.lastIndexOf('/');
+          if (idx == -1) return path;
+          return path.substring(idx + 1);
         }
       };
     }

@@ -17,14 +17,15 @@
 package org.apache.solr.client.api.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Map;
 
 public class ReadFileStoreResponse extends SolrJerseyResponse {
-    // A flag value that RawResponseWriter handles specially to return raw-content to users.
-    // Typed as 'Object' for module-dependency reasons, but should always be a ContentStream or ContentWriter
-    @JsonProperty("content") public Object output;
+  // A flag value that RawResponseWriter handles specially to return raw-content to users.
+  // Typed as 'Object' for module-dependency reasons, but should always be a ContentStream or
+  // ContentWriter
+  @JsonProperty("content")
+  public Object output;
 
-    // Used for
-    @JsonProperty public Map<String, Object> files;
+  // Used for
+  @JsonProperty public Map<String, Object> files;
 }
