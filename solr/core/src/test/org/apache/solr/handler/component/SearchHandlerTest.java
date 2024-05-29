@@ -163,6 +163,15 @@ public class SearchHandlerTest extends SolrTestCaseJ4 {
               .withDefaultCollection(replica.getCoreName())
               .build()) {
         jetty.getCoreContainer().getZkController().getZkClient().close();
+        // TODO NOCOMMIT JEGERLOW Currently the following line will fail, as recent code changes
+        // will cause the
+        //  SolrClient to build the request path as /solr/collName/collName/select.  The path
+        // building logic itself
+        //  is correct.  The problem is that CloudSolrClient mutates the 'req' object in the process
+        // of executing the
+        //  request on L152 above - it calls req.setBasePath(...) in the process of its own
+        // execution, and then that
+        //  base path is never cleared out afterwards.
         rsp = req.process(client);
         assertFalse(rsp.getResponseHeader().getBooleanArg("zkConnected"));
       }
@@ -207,6 +216,7 @@ public class SearchHandlerTest extends SolrTestCaseJ4 {
       Slice disconnectedSlice = getRandomEntry(slices);
       Replica disconnectedReplica = getRandomEntry(disconnectedSlice.getReplicas());
       JettySolrRunner disconnectedJetty = miniCluster.getReplicaJetty(disconnectedReplica);
+      req = new QueryRequest(params); // TODO See SOLR-
       // Use the replica's core URL to avoid ZK communication
       try (SolrClient solrClient =
           new HttpSolrClient.Builder(disconnectedReplica.getBaseUrl())
