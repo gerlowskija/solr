@@ -17,21 +17,19 @@
 
 package org.apache.solr.handler.admin.api;
 
-import static org.apache.solr.client.solrj.SolrRequest.METHOD.GET;
-import static org.apache.solr.common.params.CommonParams.ACTION;
 import static org.apache.solr.common.params.CoreAdminParams.COLLECTION;
-import static org.apache.solr.handler.ClusterAPI.wrapParams;
-import static org.apache.solr.security.PermissionNameProvider.Name.COLL_READ_PERM;
+import static org.apache.solr.handler.admin.ClusterStatus.INCLUDE_ALL;
 
-import java.lang.invoke.MethodHandles;
-import org.apache.solr.api.EndPoint;
-import org.apache.solr.common.cloud.ZkStateReader;
-import org.apache.solr.common.params.CollectionParams;
-import org.apache.solr.handler.admin.CollectionsHandler;
+import jakarta.inject.Inject;
+import org.apache.solr.client.api.endpoint.CollectionDetailsApi;
+import org.apache.solr.client.api.model.CollectionDetailsResponse;
+import org.apache.solr.client.solrj.JacksonContentWriter;
+import org.apache.solr.common.params.ModifiableSolrParams;
+import org.apache.solr.common.util.NamedList;
+import org.apache.solr.core.CoreContainer;
+import org.apache.solr.handler.admin.ClusterStatus;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * V2 API for displaying basic information about a single collection.
@@ -39,27 +37,32 @@ import org.slf4j.LoggerFactory;
  * <p>This API (GET /v2/collections/collectionName) is analogous to the v1
  * /admin/collections?action=CLUSTERSTATUS&amp;collection=collectionName command.
  */
-public class CollectionStatusAPI {
-  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+public class CollectionStatusAPI extends AdminAPIBase implements CollectionDetailsApi {
 
-  private final CollectionsHandler collectionsHandler;
-
-  public CollectionStatusAPI(CollectionsHandler collectionsHandler) {
-    this.collectionsHandler = collectionsHandler;
+  @Inject
+  public CollectionStatusAPI(
+      CoreContainer coreContainer, SolrQueryRequest req, SolrQueryResponse rsp) {
+    super(coreContainer, req, rsp);
   }
 
-  @EndPoint(
-      path = {"/c/{collection}", "/collections/{collection}"},
-      method = GET,
-      permission = COLL_READ_PERM)
-  public void getCollectionStatus(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
-    req =
-        wrapParams(
-            req, // 'req' can have a 'shard' param
-            ACTION,
-            CollectionParams.CollectionAction.CLUSTERSTATUS.toString(),
-            COLLECTION,
-            req.getPathTemplateValues().get(ZkStateReader.COLLECTION_PROP));
-    collectionsHandler.handleRequestBody(req, rsp);
+  @Override
+  public CollectionDetailsResponse getCollectionDetails(String collectionName) throws Exception {
+    final CoreContainer coreContainer = fetchAndValidateZooKeeperAwareCoreContainer();
+
+    final var zkStateReader = coreContainer.getZkController().getZkStateReader();
+    // 'CLUSTERSTATUS' logic traditionally takes a solrParams directly from user-parameters, but
+    // since we're only fetching info about a single collection here, we mock up the 'solrParams' to
+    // reflect the single-coll case.
+    final var singleCollParams = new ModifiableSolrParams();
+    singleCollParams.add(INCLUDE_ALL, "false");
+    singleCollParams.add(COLLECTION, collectionName);
+
+    // TODO Push usage of CollectionDetailsResponse POJO down into ClusterStatus.getClusterStatus to
+    // avoid NamedList usage.
+    final var collectionDetailsRaw = new NamedList<>();
+    new ClusterStatus(zkStateReader, singleCollParams).getClusterStatus(collectionDetailsRaw);
+    final var collectionDetailsMap = collectionDetailsRaw.asMap();
+    return JacksonContentWriter.DEFAULT_MAPPER.convertValue(
+        collectionDetailsMap, CollectionDetailsResponse.class);
   }
 }

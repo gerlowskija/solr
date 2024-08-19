@@ -37,8 +37,8 @@ import static org.apache.solr.common.params.CoreAdminParams.NAME;
 import java.util.List;
 import java.util.Map;
 import org.apache.solr.SolrTestCaseJ4;
+import org.apache.solr.client.api.model.CollectionRouterProperties;
 import org.apache.solr.client.api.model.CreateCollectionRequestBody;
-import org.apache.solr.client.api.model.CreateCollectionRouterProperties;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.junit.Test;
@@ -139,7 +139,7 @@ public class CreateCollectionAPITest extends SolrTestCaseJ4 {
     requestBody.alias = "someAliasName";
     requestBody.properties = Map.of("propName", "propValue");
     requestBody.async = "someAsyncId";
-    requestBody.router = new CreateCollectionRouterProperties();
+    requestBody.router = new CollectionRouterProperties();
     requestBody.router.name = "someRouterName";
     requestBody.router.field = "someField";
     requestBody.nodeSet = List.of("node1", "node2");

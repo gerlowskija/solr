@@ -54,8 +54,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.solr.client.api.endpoint.CreateCollectionApi;
+import org.apache.solr.client.api.model.CollectionRouterProperties;
 import org.apache.solr.client.api.model.CreateCollectionRequestBody;
-import org.apache.solr.client.api.model.CreateCollectionRouterProperties;
 import org.apache.solr.client.api.model.SubResponseAccumulatingJerseyResponse;
 import org.apache.solr.client.solrj.SolrResponse;
 import org.apache.solr.client.solrj.request.beans.V2ApiConstants;
@@ -321,7 +321,7 @@ public class CreateCollection extends AdminAPIBase implements CreateCollectionAp
     requestBody.properties =
         copyPrefixedPropertiesWithoutPrefix(params, new HashMap<>(), PROPERTY_PREFIX);
     if (params.get("router.name") != null || params.get("router.field") != null) {
-      final var routerProperties = new CreateCollectionRouterProperties();
+      final var routerProperties = new CollectionRouterProperties();
       routerProperties.name = params.get("router.name");
       routerProperties.field = params.get("router.field");
       requestBody.router = routerProperties;
@@ -367,8 +367,7 @@ public class CreateCollection extends AdminAPIBase implements CreateCollectionAp
           flattenMapWithPrefix(propertiesMap, v2MapVals, CollectionAdminParams.PROPERTY_PREFIX);
           break;
         case ROUTER_KEY:
-          final var routerProperties =
-              (CreateCollectionRouterProperties) v2MapVals.remove(ROUTER_KEY);
+          final var routerProperties = (CollectionRouterProperties) v2MapVals.remove(ROUTER_KEY);
           final Map<String, Object> routerPropertiesAsMap = Utils.reflectToMap(routerProperties);
           flattenMapWithPrefix(
               routerPropertiesAsMap, v2MapVals, CollectionAdminParams.ROUTER_PREFIX);

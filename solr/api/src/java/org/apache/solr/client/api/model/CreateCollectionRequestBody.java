@@ -48,7 +48,7 @@ public class CreateCollectionRequestBody {
 
   @JsonProperty public String async;
 
-  @JsonProperty public CreateCollectionRouterProperties router;
+  @JsonProperty public CollectionRouterProperties router;
 
   // Parameters below differ from v1 API
   // V1 API uses createNodeSet

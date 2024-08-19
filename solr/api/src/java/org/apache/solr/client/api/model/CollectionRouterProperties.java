@@ -18,7 +18,7 @@ package org.apache.solr.client.api.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class CreateCollectionRouterProperties {
+public class CollectionRouterProperties {
   @JsonProperty public String name;
 
   @JsonProperty public String field;
