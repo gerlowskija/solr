@@ -820,7 +820,7 @@ public class RunExampleTool extends ToolBase {
               "a shard count",
               2,
               1,
-              4);
+              Integer.MAX_VALUE);
 
       replicationFactor =
           promptForInt(
