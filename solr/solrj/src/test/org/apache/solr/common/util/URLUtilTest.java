@@ -56,6 +56,33 @@ public class URLUtilTest extends SolrTestCase {
   }
 
   @Test
+  public void testCanDetectBaseUrls() {
+    // V1 root
+    assertTrue(URLUtil.isBaseUrl("http://host:8983/solr"));
+    assertTrue(URLUtil.isBaseUrl("http://host:8983/solr/"));
+
+    // V2 root
+    assertTrue(URLUtil.isBaseUrl("http://host:8983/api"));
+    assertTrue(URLUtil.isBaseUrl("http://host:8983/api/"));
+
+    // Node root URL
+    assertTrue(URLUtil.isBaseUrl("http://host:8983"));
+    assertTrue(URLUtil.isBaseUrl("http://host:8983/"));
+
+    // Proxy path (MUST NOT CONTAIN '/api' or '/solr')
+    assertTrue(URLUtil.isBaseUrl("http://host:8983/somepath"));
+    assertTrue(URLUtil.isBaseUrl("http://host:8983/someproxypath/"));
+
+    // 'isBaseUrl' returns 'false' if given a core or other URL for either v1 or v2
+    assertFalse(URLUtil.isBaseUrl("http://host:8983/solr/coll"));
+    assertFalse(URLUtil.isBaseUrl("http://host:8983/solr/coll/"));
+    assertFalse(URLUtil.isBaseUrl("http://host:8983/api/collections"));
+    assertFalse(URLUtil.isBaseUrl("http://host:8983/api/collections/"));
+    assertFalse(URLUtil.isBaseUrl("http://host:8983/api/collections/coll"));
+    assertFalse(URLUtil.isBaseUrl("http://host:8983/api/collections/coll/"));
+  }
+
+  @Test
   public void testCanExtractCoreNameFromCoreUrl() {
     assertEquals(
         "techproducts", URLUtil.extractCoreFromCoreUrl("http://localhost:8983/solr/techproducts"));

@@ -207,11 +207,10 @@ public class LBHttp2SolrClient extends LBSolrClient {
       boolean isNonRetryable,
       boolean isZombie,
       RetryListener listener) {
-    String baseUrl = endpoint.toString();
-    rsp.server = baseUrl;
-    req.getRequest().setBasePath(baseUrl);
+    rsp.server = endpoint.toString();
+    req.getRequest().setBasePath(endpoint.getBaseUrl());
     CompletableFuture<NamedList<Object>> future =
-        ((Http2SolrClient) getClient(endpoint)).requestAsync(req.getRequest());
+        ((Http2SolrClient) getClient(endpoint)).requestAsync(req.getRequest(), endpoint.getCore());
     future.whenComplete(
         (result, throwable) -> {
           if (!future.isCompletedExceptionally()) {

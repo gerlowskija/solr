@@ -39,6 +39,7 @@ import org.apache.solr.common.SolrInputField;
 import org.apache.solr.common.cloud.Slice;
 import org.apache.solr.common.util.ContentStream;
 import org.apache.solr.common.util.ContentStreamBase;
+import org.apache.solr.common.util.URLUtil;
 import org.apache.solr.common.util.XML;
 
 /**
@@ -124,18 +125,26 @@ public class ClientUtils {
       String serverRootUrl,
       String collection)
       throws MalformedURLException {
-    String basePath = solrRequest.getBasePath() == null ? serverRootUrl : solrRequest.getBasePath();
-    basePath = normalizeSolrBaseUrl(basePath);
-    basePath = addApiRootToNodeUrl(solrRequest, basePath);
+    final String providedUrl = solrRequest.getBasePath() == null ? serverRootUrl : solrRequest.getBasePath();
 
-    if (solrRequest.requiresCollection() && collection != null) basePath += "/" + collection;
+    String baseUrl = providedUrl;
+    // TODO NOCOMMIT - decide whether this safety check is "prudent" or "a hack that allows laziness elsewhere"
+    // This shouldn't happen, but just in case let's make sure we haven't received a legacy "core-style" URL (i.e. ...8983/solr/techproducts)
+    if (! URLUtil.isBaseUrl(providedUrl)) {
+      baseUrl = URLUtil.extractBaseUrl(providedUrl);
+      collection = URLUtil.extractCoreFromCoreUrl(providedUrl);
+    }
+    baseUrl = normalizeSolrBaseUrl(baseUrl);
+    baseUrl = addApiRootToNodeUrl(solrRequest, baseUrl);
+
+    if (solrRequest.requiresCollection() && collection != null) baseUrl += "/" + collection;
 
     String path = requestWriter.getPath(solrRequest);
     if (path == null || !path.startsWith("/")) {
       path = DEFAULT_PATH;
     }
 
-    return basePath + path;
+    return baseUrl + path;
   }
 
   // ------------------------------------------------------------------------
