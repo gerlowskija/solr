@@ -52,7 +52,12 @@ public class URLUtil {
 
   public static boolean isBaseUrl(String url) {
     final var normalizedUrl = removeTrailingSlashIfPresent(url);
-    return normalizedUrl.endsWith("/solr");
+    return normalizedUrl.endsWith("/solr")
+        || // The URL is to the API-root for v1
+        normalizedUrl.endsWith("/api")
+        || // The URL is to the API-root for v2
+        (!normalizedUrl.contains("/api")
+            && !normalizedUrl.contains("/solr")); // THe URL is to the Solr root path (i.e. '/')
   }
 
   /**

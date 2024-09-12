@@ -64,6 +64,48 @@ public class ClientUtils {
   }
 
   /**
+   * Trim any "api root" path segment from the provided URL
+   *
+   * <p>SolrJ users specify a range of URL formats when creating clients. Commonly provided URLs
+   * might point to the node root (e.g. "http://localhost:8983"), the root of Solr's v1 API (e.g.
+   * "http://localhost:8983/solr"), or the root of Solr's v2 API (e.g. "http://localhost:8983/api").
+   * Building the correct URL for any given user request requires normalizing these various forms.
+   * This method chooses the "node root" URL as the normalized form, and returns that to callers.
+   *
+   * @param baseUrl the URL string to normalize
+   */
+  private static String normalizeSolrBaseUrl(String baseUrl) {
+    for (SolrRequest.ApiVersion v : SolrRequest.ApiVersion.values()) {
+      if (baseUrl.endsWith(v.getApiPrefix())) {
+        return baseUrl.substring(0, baseUrl.length() - v.getApiPrefix().length());
+      }
+    }
+
+    return baseUrl;
+  }
+
+  private static String addApiRootToNodeUrl(SolrRequest<?> solrRequest, String nodeBaseUrl)
+      throws MalformedURLException {
+    final var apiRoot = determineApiRoot(solrRequest);
+    return addApiRootToNodeUrl(nodeBaseUrl, apiRoot);
+  }
+
+  private static String determineApiRoot(SolrRequest<?> solrRequest) {
+    if (solrRequest.getApiVersion() == SolrRequest.ApiVersion.V2
+        && solrRequest instanceof V2Request
+        && System.getProperty("solr.v2RealPath") != null) {
+      return "/solr/____v2";
+    } else {
+      return solrRequest.getApiVersion().getApiPrefix();
+    }
+  }
+
+  private static String addApiRootToNodeUrl(String nodeRootUrl, String apiRootSegment) {
+    final var oldURI = URI.create(nodeRootUrl);
+    return oldURI.resolve(apiRootSegment).toString();
+  }
+
+  /**
    * Create the full URL for a SolrRequest (excepting query parameters) as a String
    *
    * @param solrRequest the {@link SolrRequest} to build the URL for
@@ -83,14 +125,8 @@ public class ClientUtils {
       String collection)
       throws MalformedURLException {
     String basePath = solrRequest.getBasePath() == null ? serverRootUrl : solrRequest.getBasePath();
-
-    if (solrRequest.getApiVersion() == SolrRequest.ApiVersion.V2) {
-      if (solrRequest instanceof V2Request && System.getProperty("solr.v2RealPath") != null) {
-        basePath = serverRootUrl + "/____v2";
-      } else {
-        basePath = addNormalV2ApiRoot(basePath);
-      }
-    }
+    basePath = normalizeSolrBaseUrl(basePath);
+    basePath = addApiRootToNodeUrl(solrRequest, basePath);
 
     if (solrRequest.requiresCollection() && collection != null) basePath += "/" + collection;
 
@@ -100,20 +136,6 @@ public class ClientUtils {
     }
 
     return basePath + path;
-  }
-
-  private static String addNormalV2ApiRoot(String basePath) throws MalformedURLException {
-    final var oldURI = URI.create(basePath);
-    final var revisedPath = buildReplacementV2Path(oldURI.getPath());
-    return oldURI.resolve(revisedPath).toString();
-  }
-
-  private static String buildReplacementV2Path(String existingPath) {
-    if (existingPath.contains("/solr")) {
-      return existingPath.replaceFirst("/solr", "/api");
-    } else {
-      return existingPath + "/api";
-    }
   }
 
   // ------------------------------------------------------------------------
