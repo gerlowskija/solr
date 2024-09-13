@@ -298,7 +298,7 @@ public class HttpSolrClient extends BaseHttpSolrClient {
     ExecutorService pool =
         ExecutorUtil.newMDCAwareFixedThreadPool(1, new SolrNamedThreadFactory("httpUriRequest"));
     try {
-      MDC.put("HttpSolrClient.url", baseUrl);
+      MDC.put("HttpSolrClient.url", getBaseURL());
       mrr.future =
           pool.submit(
               () ->
@@ -339,7 +339,7 @@ public class HttpSolrClient extends BaseHttpSolrClient {
         contentWriter == null ? requestWriter.getContentStreams(request) : null;
 
     final String requestUrlBeforeParams =
-        ClientUtils.buildRequestUrl(request, requestWriter, baseUrl, collection);
+        ClientUtils.buildRequestUrl(request, requestWriter, getBaseURL(), collection);
 
     ResponseParser parser = request.getResponseParser();
     if (parser == null) {
@@ -606,7 +606,7 @@ public class HttpSolrClient extends BaseHttpSolrClient {
         default:
           if (processor == null || contentType == null) {
             throw new RemoteSolrException(
-                baseUrl,
+                getBaseURL(),
                 httpStatus,
                 "non ok status: "
                     + httpStatus
@@ -636,7 +636,7 @@ public class HttpSolrClient extends BaseHttpSolrClient {
         if (!processorMimeTypes.contains(mimeType)) {
           if (isUnmatchedErrorCode(mimeType, httpStatus)) {
             throw new RemoteSolrException(
-                baseUrl,
+                getBaseURL(),
                 httpStatus,
                 "non ok status: "
                     + httpStatus
@@ -654,10 +654,10 @@ public class HttpSolrClient extends BaseHttpSolrClient {
             ByteArrayOutputStream body = new ByteArrayOutputStream();
             respBody.transferTo(body);
             throw new RemoteSolrException(
-                baseUrl, httpStatus, prefix + body.toString(exceptionCharset), null);
+                getBaseURL(), httpStatus, prefix + body.toString(exceptionCharset), null);
           } catch (IOException e) {
             throw new RemoteSolrException(
-                baseUrl,
+                getBaseURL(),
                 httpStatus,
                 "Could not parse response with encoding " + exceptionCharset,
                 e);
@@ -669,14 +669,14 @@ public class HttpSolrClient extends BaseHttpSolrClient {
       try {
         rsp = processor.processResponse(respBody, charsetName);
       } catch (Exception e) {
-        throw new RemoteSolrException(baseUrl, httpStatus, e.getMessage(), e);
+        throw new RemoteSolrException(getBaseURL(), httpStatus, e.getMessage(), e);
       }
       Object error = rsp == null ? null : rsp.get("error");
       if (error != null
           && (isV2Api
               || String.valueOf(getObjectByPath(error, true, errPath))
                   .endsWith("ExceptionWithErrObject"))) {
-        throw RemoteExecutionException.create(baseUrl, rsp);
+        throw RemoteExecutionException.create(getBaseURL(), rsp);
       }
       if (httpStatus != HttpStatus.SC_OK && !isV2Api) {
         NamedList<String> metadata = null;
@@ -713,7 +713,7 @@ public class HttpSolrClient extends BaseHttpSolrClient {
               .append(method.getURI());
           reason = java.net.URLDecoder.decode(msg.toString(), FALLBACK_CHARSET);
         }
-        RemoteSolrException rss = new RemoteSolrException(baseUrl, httpStatus, reason, null);
+        RemoteSolrException rss = new RemoteSolrException(getBaseURL(), httpStatus, reason, null);
         if (metadata != null) rss.setMetadata(metadata);
         throw rss;
       }
@@ -779,7 +779,8 @@ public class HttpSolrClient extends BaseHttpSolrClient {
     return invariantParams;
   }
 
-  /** Typically looks like {@code http://localhost:8983/solr} (no core or collection) */
+  /** Typically looks like {@code http://localhost:8983/solr} */
+  @Override
   public String getBaseURL() {
     return baseUrl;
   }

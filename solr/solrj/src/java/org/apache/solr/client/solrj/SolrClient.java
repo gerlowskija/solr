@@ -1225,4 +1225,14 @@ public abstract class SolrClient implements Serializable, Closeable {
   public String getDefaultCollection() {
     return defaultCollection;
   }
+
+  /**
+   * Get the base URL (i.e. URL ending in "/solr" or "/api") used for all requests by this client,
+   * if one exists.
+   *
+   * <p>If the client uses multiple URLs (e.g. CloudHttp2SolrClient) this method returns null.
+   */
+  public String getBaseURL() {
+    return null;
+  }
 }
