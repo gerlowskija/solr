@@ -2001,7 +2001,7 @@ public class IndexFetcher {
                 leaderBaseUrl,
                 solrClient,
                 (c) -> {
-                  c.request(req, leaderCoreName);
+                  return c.request(req, leaderCoreName);
                 });
         final var responseStatus = (Integer) response.get("responseStatus");
         is = (InputStream) response.get("stream");
