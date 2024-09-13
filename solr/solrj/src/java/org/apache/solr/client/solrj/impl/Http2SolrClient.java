@@ -420,7 +420,7 @@ public class Http2SolrClient extends HttpSolrClientBase {
   public CompletableFuture<NamedList<Object>> requestAsync(
       final SolrRequest<?> solrRequest, String collection) {
     if (ClientUtils.shouldApplyDefaultCollection(collection, solrRequest)) {
-      collection = defaultCollection;
+      collection = getDefaultCollection();
     }
     CompletableFuture<NamedList<Object>> future = new CompletableFuture<>();
     final MakeRequestReturnValue mrrv;
@@ -491,7 +491,7 @@ public class Http2SolrClient extends HttpSolrClientBase {
   public NamedList<Object> request(SolrRequest<?> solrRequest, String collection)
       throws SolrServerException, IOException {
     if (ClientUtils.shouldApplyDefaultCollection(collection, solrRequest)) {
-      collection = defaultCollection;
+      collection = getDefaultCollection();
     }
     String url = getRequestUrl(solrRequest, collection);
     Throwable abortCause = null;

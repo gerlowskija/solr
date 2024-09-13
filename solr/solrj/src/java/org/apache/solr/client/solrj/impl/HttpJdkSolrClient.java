@@ -196,7 +196,7 @@ public class HttpJdkSolrClient extends HttpSolrClientBase {
       throws SolrServerException, IOException {
     checkClosed();
     if (ClientUtils.shouldApplyDefaultCollection(collection, solrRequest)) {
-      collection = defaultCollection;
+      collection = getDefaultCollection();
     }
     String url = getRequestUrl(solrRequest, collection);
     ResponseParser parserToUse = responseParser(solrRequest);

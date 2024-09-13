@@ -113,8 +113,8 @@ public class LBHttpSolrClient extends LBSolrClient {
     this.httpClient =
         builder.httpClient == null ? constructClient(builder.solrEndpoints) : builder.httpClient;
     this.defaultCollection = builder.defaultCollection;
-    if (httpSolrClientBuilder != null && this.defaultCollection != null) {
-      httpSolrClientBuilder.defaultCollection = this.defaultCollection;
+    if (httpSolrClientBuilder != null && getDefaultCollection() != null) {
+      httpSolrClientBuilder.defaultCollection = getDefaultCollection();
     }
     this.connectionTimeoutMillis = builder.connectionTimeoutMillis;
     this.soTimeoutMillis = builder.socketTimeoutMillis;
@@ -146,8 +146,8 @@ public class LBHttpSolrClient extends LBSolrClient {
             .withHttpClient(httpClient)
             .withConnectionTimeout(connectionTimeoutMillis, TimeUnit.MILLISECONDS)
             .withSocketTimeout(soTimeoutMillis, TimeUnit.MILLISECONDS);
-        if (defaultCollection != null) {
-          httpSolrClientBuilder.withDefaultCollection(defaultCollection);
+        if (getDefaultCollection() != null) {
+          httpSolrClientBuilder.withDefaultCollection(getDefaultCollection());
         }
         if (requestWriter != null) {
           httpSolrClientBuilder.withRequestWriter(requestWriter);
@@ -165,8 +165,8 @@ public class LBHttpSolrClient extends LBSolrClient {
               .withResponseParser(parser)
               .withConnectionTimeout(connectionTimeoutMillis, TimeUnit.MILLISECONDS)
               .withSocketTimeout(soTimeoutMillis, TimeUnit.MILLISECONDS);
-      if (defaultCollection != null) {
-        clientBuilder.withDefaultCollection(defaultCollection);
+      if (getDefaultCollection() != null) {
+        clientBuilder.withDefaultCollection(getDefaultCollection());
       }
       if (requestWriter != null) {
         clientBuilder.withRequestWriter(requestWriter);

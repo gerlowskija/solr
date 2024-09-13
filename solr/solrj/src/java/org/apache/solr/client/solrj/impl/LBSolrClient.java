@@ -672,7 +672,7 @@ public abstract class LBSolrClient extends SolrClient {
     int numServersTried = 0;
     Map<String, EndpointWrapper> justFailed = null;
     if (ClientUtils.shouldApplyDefaultCollection(collection, request))
-      collection = defaultCollection;
+      collection = getDefaultCollection();
 
     boolean timeAllowedExceeded = false;
     long timeAllowedNano = getTimeAllowedInNanos(request);
