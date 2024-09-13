@@ -52,6 +52,10 @@ public class DelegatingSolrClient extends SolrClient {
     return delegate.getDefaultCollection();
   }
 
+  public String getBaseURL() {
+    return delegate.getBaseURL();
+  }
+
   /**
    * Closes the "wrapped" delegate client if requested on initial creation in {@link
    * DelegatingSolrClient#DelegatingSolrClient(SolrClient, boolean)}
