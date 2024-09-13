@@ -32,6 +32,8 @@ import java.util.Map.Entry;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrResponse;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.URLReplacingSolrClient;
 import org.apache.solr.client.solrj.request.RequestWriter;
 import org.apache.solr.client.solrj.request.V2Request;
 import org.apache.solr.common.SolrInputDocument;
@@ -61,6 +63,35 @@ public class ClientUtils {
     ccc.setContentType(contentType);
     streams.add(ccc);
     return streams;
+  }
+
+  @FunctionalInterface
+  public interface SolrClientFunction<T, R> {
+    R apply(T t) throws IOException, SolrServerException;
+  }
+
+  /**
+   * Wraps an "HTTP" SolrClient in order to mask its existing base URL with a replacement, and uses
+   * the result to run the provided lambda.
+   *
+   * <p>Useful for making API calls specific to particular Solr nodes (e.g. "metrics") without
+   * needing to create a new client
+   *
+   * @param altUrl the base URL (i.e. ending in "/solr" or "/api") to use for all requests made in
+   *     the lambda
+   * @param client an "HTTP" SolrClient (i.e. one that returns a non-null value from {@link
+   *     SolrClient#getBaseURL()})
+   * @param supplier the SolrClient-dependent lambda to execute
+   * @see URLReplacingSolrClient
+   * @see SolrRequest#setBasePath(String)
+   * @see SolrRequest#getBasePath()
+   */
+  public static <R> R requestWithUrl(
+      String altUrl, SolrClient client, SolrClientFunction<SolrClient, R> supplier)
+      throws SolrServerException, IOException {
+    try (final var altUrlClient = new URLReplacingSolrClient(altUrl, client)) {
+      return supplier.apply(altUrlClient);
+    }
   }
 
   /**

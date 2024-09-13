@@ -107,7 +107,18 @@ public class LBHttp2SolrClient extends LBSolrClient {
 
   @Override
   protected SolrClient getClient(Endpoint endpoint) {
-    return solrClient;
+
+    // Only override the underlying client's default collection if the endpoint has a replacement
+    return new URLReplacingSolrClient(endpoint.getBaseUrl(), solrClient) {
+      @Override
+      public String getDefaultCollection() {
+        if (endpoint.getCore() != null) {
+          return endpoint.getCore();
+        } else {
+          return solrClient.getDefaultCollection();
+        }
+      }
+    };
   }
 
   @Override
@@ -207,9 +218,7 @@ public class LBHttp2SolrClient extends LBSolrClient {
       boolean isNonRetryable,
       boolean isZombie,
       RetryListener listener) {
-    String baseUrl = endpoint.toString();
-    rsp.server = baseUrl;
-    req.getRequest().setBasePath(baseUrl);
+    rsp.server = endpoint.toString();
     CompletableFuture<NamedList<Object>> future =
         ((Http2SolrClient) getClient(endpoint)).requestAsync(req.getRequest());
     future.whenComplete(

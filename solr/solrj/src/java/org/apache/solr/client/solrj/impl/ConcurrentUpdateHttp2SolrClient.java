@@ -362,35 +362,41 @@ public class ConcurrentUpdateHttp2SolrClient extends SolrClient {
     if (ClientUtils.shouldApplyDefaultCollection(collection, request))
       collection = getDefaultCollection();
     if (!(request instanceof UpdateRequest)) {
-      request.setBasePath(basePath);
-      return client.request(request, collection);
+      final String effectiveCollection = collection;
+      return ClientUtils.requestWithUrl(
+          basePath,
+          client,
+          (c) -> {
+            return c.request(request, effectiveCollection);
+          });
     }
     UpdateRequest req = (UpdateRequest) request;
-    req.setBasePath(basePath);
-    // this happens for commit...
-    if (streamDeletes) {
-      if ((req.getDocuments() == null || req.getDocuments().isEmpty())
-          && (req.getDeleteById() == null || req.getDeleteById().isEmpty())
-          && (req.getDeleteByIdMap() == null || req.getDeleteByIdMap().isEmpty())) {
-        if (req.getDeleteQuery() == null) {
+    try (final var altUrlClient = new URLReplacingSolrClient(basePath, client)) {
+      // this happens for commit...
+      if (streamDeletes) {
+        if ((req.getDocuments() == null || req.getDocuments().isEmpty())
+            && (req.getDeleteById() == null || req.getDeleteById().isEmpty())
+            && (req.getDeleteByIdMap() == null || req.getDeleteByIdMap().isEmpty())) {
+          if (req.getDeleteQuery() == null) {
+            blockUntilFinished();
+            return altUrlClient.request(request, collection);
+          }
+        }
+      } else {
+        if ((req.getDocuments() == null || req.getDocuments().isEmpty())) {
           blockUntilFinished();
-          return client.request(request, collection);
+          return altUrlClient.request(request, collection);
         }
       }
-    } else {
-      if ((req.getDocuments() == null || req.getDocuments().isEmpty())) {
-        blockUntilFinished();
-        return client.request(request, collection);
-      }
-    }
 
-    SolrParams params = req.getParams();
-    if (params != null) {
-      // check if it is waiting for the searcher
-      if (params.getBool(UpdateParams.WAIT_SEARCHER, false)) {
-        log.info("blocking for commit/optimize");
-        blockUntilFinished(); // empty the queue
-        return client.request(request, collection);
+      SolrParams params = req.getParams();
+      if (params != null) {
+        // check if it is waiting for the searcher
+        if (params.getBool(UpdateParams.WAIT_SEARCHER, false)) {
+          log.info("blocking for commit/optimize");
+          blockUntilFinished(); // empty the queue
+          return altUrlClient.request(request, collection);
+        }
       }
     }
 

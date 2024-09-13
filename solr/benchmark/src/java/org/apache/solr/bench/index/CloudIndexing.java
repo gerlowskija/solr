@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.solr.bench.Docs;
 import org.apache.solr.bench.MiniClusterState;
 import org.apache.solr.client.solrj.request.UpdateRequest;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrInputDocument;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -127,9 +128,14 @@ public class CloudIndexing {
   public Object indexDoc(MiniClusterState.MiniClusterBenchState miniClusterState, BenchState state)
       throws Exception {
     UpdateRequest updateRequest = new UpdateRequest();
-    updateRequest.setBasePath(
-        miniClusterState.nodes.get(miniClusterState.getRandom().nextInt(state.nodeCount)));
+    final var randomUrl =
+        miniClusterState.nodes.get(miniClusterState.getRandom().nextInt(state.nodeCount));
     updateRequest.add(state.getNextDoc());
-    return miniClusterState.client.request(updateRequest, BenchState.COLLECTION);
+    return ClientUtils.requestWithUrl(
+        randomUrl,
+        miniClusterState.client,
+        (c) -> {
+          return c.request(updateRequest, BenchState.COLLECTION);
+        });
   }
 }

@@ -28,6 +28,7 @@ import org.apache.solr.bench.MiniClusterState.MiniClusterBenchState;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.NoOpResponseParser;
 import org.apache.solr.client.solrj.request.QueryRequest;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.core.SolrCore;
@@ -74,6 +75,7 @@ public class QueryResponseWriters {
 
     private int docs = 100;
     private QueryRequest q;
+    private String qUrl;
 
     @Setup(Level.Trial)
     public void setup(MiniClusterBenchState miniClusterState) throws Exception {
@@ -97,8 +99,7 @@ public class QueryResponseWriters {
       params.set(CommonParams.ROWS, docs);
       q = new QueryRequest(params);
       q.setResponseParser(new NoOpResponseParser(wt));
-      String base = miniClusterState.nodes.get(0);
-      q.setBasePath(base);
+      qUrl = miniClusterState.nodes.get(0);
     }
   }
 
@@ -106,6 +107,11 @@ public class QueryResponseWriters {
   public Object query(
       BenchState benchState, MiniClusterState.MiniClusterBenchState miniClusterState)
       throws SolrServerException, IOException {
-    return miniClusterState.client.request(benchState.q, collection);
+    return ClientUtils.requestWithUrl(
+        benchState.qUrl,
+        miniClusterState.client,
+        (c) -> {
+          return c.request(benchState.q, collection);
+        });
   }
 }

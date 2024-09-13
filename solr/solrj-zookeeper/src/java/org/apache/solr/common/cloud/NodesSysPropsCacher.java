@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.request.GenericSolrRequest;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.MapWriter;
 import org.apache.solr.common.NavigableObject;
 import org.apache.solr.common.SolrException;
@@ -86,10 +87,16 @@ public class NodesSysPropsCacher implements NodesSysProps, AutoCloseable {
     }
 
     GenericSolrRequest req = new GenericSolrRequest(SolrRequest.METHOD.GET, "/admin/metrics", msp);
-    req.setBasePath(zkStateReader.getBaseUrlForNodeName(nodeName));
+    final var targetBaseUrl = zkStateReader.getBaseUrlForNodeName(nodeName);
     try {
       LinkedHashMap<String, Object> result = new LinkedHashMap<>();
-      NavigableObject response = solrClient.request(req);
+      NavigableObject response =
+          ClientUtils.requestWithUrl(
+              targetBaseUrl,
+              solrClient,
+              (c) -> {
+                return c.request(req);
+              });
       NavigableObject metrics = (NavigableObject) response._get("metrics", MapWriter.EMPTY);
       keys.forEach((tag, key) -> result.put(tag, metrics._get(key, null)));
       return result;

@@ -31,6 +31,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.request.CollectionAdminRequest;
 import org.apache.solr.client.solrj.request.QueryRequest;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
@@ -68,6 +69,7 @@ public class FilterCache {
 
     QueryRequest q1 = new QueryRequest(new SolrQuery("q", "*:*", "fq", "Ea_b:true"));
     QueryRequest q2 = new QueryRequest(new SolrQuery("q", "*:*", "fq", "FB_b:true"));
+    String qUrl = null;
 
     @Setup(Level.Trial)
     public void setupTrial(MiniClusterState.MiniClusterBenchState miniClusterState)
@@ -101,8 +103,7 @@ public class FilterCache {
 
       miniClusterState.index(COLLECTION, docs, 30 * 1000);
       String base = miniClusterState.nodes.get(0);
-      q1.setBasePath(base);
-      q2.setBasePath(base);
+      qUrl = base;
     }
 
     @Setup(Level.Iteration)
@@ -110,8 +111,12 @@ public class FilterCache {
         throws SolrServerException, IOException {
       // Reload the collection/core to drop existing caches
       CollectionAdminRequest.Reload reload = CollectionAdminRequest.reloadCollection(COLLECTION);
-      reload.setBasePath(miniClusterState.nodes.get(0));
-      miniClusterState.client.request(reload);
+      ClientUtils.requestWithUrl(
+          miniClusterState.nodes.get(0),
+          miniClusterState.client,
+          (c) -> {
+            return c.request(reload);
+          });
     }
 
     @TearDown(Level.Iteration)
@@ -139,14 +144,25 @@ public class FilterCache {
   public Object filterCacheMultipleQueries(
       BenchState benchState, MiniClusterState.MiniClusterBenchState miniClusterState)
       throws SolrServerException, IOException {
-    return miniClusterState.client.request(
-        miniClusterState.getRandom().nextBoolean() ? benchState.q1 : benchState.q2, COLLECTION);
+    return ClientUtils.requestWithUrl(
+        benchState.qUrl,
+        miniClusterState.client,
+        (c) -> {
+          return c.request(
+              miniClusterState.getRandom().nextBoolean() ? benchState.q1 : benchState.q2,
+              COLLECTION);
+        });
   }
 
   @Benchmark
   public Object filterCacheSingleQuery(
       BenchState benchState, MiniClusterState.MiniClusterBenchState miniClusterState)
       throws SolrServerException, IOException {
-    return miniClusterState.client.request(benchState.q1, COLLECTION);
+    return ClientUtils.requestWithUrl(
+        benchState.qUrl,
+        miniClusterState.client,
+        (c) -> {
+          return c.request(benchState.q1, COLLECTION);
+        });
   }
 }

@@ -250,6 +250,7 @@ public abstract class HttpSolrClientTestBase extends SolrJettyTestBase {
     }
   }
 
+  // TODO - test can be deleted outright when SOLR-17256 is completed
   /**
    * test that SolrExceptions thrown by HttpSolrClient can correctly encapsulate http status codes
    * even when not on the list of ErrorCodes solr may return.

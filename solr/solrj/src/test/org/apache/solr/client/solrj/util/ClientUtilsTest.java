@@ -72,6 +72,7 @@ public class ClientUtilsTest extends SolrTestCase {
       assertEquals("http://localhost:8983/solr/someColl/select", url);
     }
 
+    // TODO - clause can be removed outright when SOLR-17256 is finished
     // Uses SolrRequest.getBasePath() to override baseUrl
     {
       final var request = new HealthCheckRequest();

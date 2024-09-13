@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.solr.SolrTestCaseJ4;
 import org.apache.solr.client.solrj.request.QueryRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.junit.Test;
@@ -120,9 +121,13 @@ public class MiniClusterBenchStateTest extends SolrTestCaseJ4 {
     ModifiableSolrParams params = MiniClusterState.params("q", "*:*");
 
     QueryRequest queryRequest = new QueryRequest(params);
-    queryRequest.setBasePath(miniBenchState.nodes.get(0));
-
-    QueryResponse result = queryRequest.process(miniBenchState.client, collection);
+    QueryResponse result =
+        ClientUtils.requestWithUrl(
+            miniBenchState.nodes.get(0),
+            miniBenchState.client,
+            (c) -> {
+              return queryRequest.process(c, collection);
+            });
 
     BaseBenchState.log("match all query result=" + result);
 

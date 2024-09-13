@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.solr.client.solrj.request.RequestWriter;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.ContentStream;
 
@@ -272,6 +273,16 @@ public abstract class SolrRequest<T extends SolrResponse> implements Serializabl
     return getParams() == null ? null : getParams().get("collection");
   }
 
+  /**
+   * Set a base URL (i.e. a URL ending in "/solr" or "/api") that will be used to override the base
+   * URL of any "HTTP" SolrClients this request is used with.
+   *
+   * @param path the overriding base URL, in the form "scheme://host:port/solr" or
+   *     "scheme://host:port/api"
+   * @deprecated use {@link org.apache.solr.client.solrj.impl.URLReplacingSolrClient} or {@link
+   *     org.apache.solr.client.solrj.util.ClientUtils#requestWithUrl(String, SolrClient,
+   *     ClientUtils.SolrClientFunction)} instead
+   */
   @Deprecated // SOLR-17256 Slated for removal in Solr 10; only used internally
   public void setBasePath(String path) {
     if (path.endsWith("/")) path = path.substring(0, path.length() - 1);

@@ -39,6 +39,7 @@ import org.apache.solr.client.solrj.impl.BinaryResponseParser;
 import org.apache.solr.client.solrj.impl.ConcurrentUpdateSolrClient;
 import org.apache.solr.client.solrj.request.AbstractUpdateRequest;
 import org.apache.solr.client.solrj.request.UpdateRequest;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.cloud.ZkCoreNodeProps;
 import org.apache.solr.common.cloud.ZkStateReader;
@@ -315,8 +316,12 @@ public class SolrCmdDistributor implements Closeable {
       blockAndDoRetries();
 
       try {
-        req.uReq.setBasePath(req.node.getUrl());
-        clients.getHttpClient().request(req.uReq);
+        ClientUtils.requestWithUrl(
+            req.node.getUrl(),
+            clients.getHttpClient(),
+            (c) -> {
+              return c.request(req.uReq);
+            });
       } catch (Exception e) {
         log.error("Exception making request", e);
         SolrError error = new SolrError();

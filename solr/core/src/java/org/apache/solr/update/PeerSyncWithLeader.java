@@ -33,6 +33,7 @@ import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.request.QueryRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.cloud.ZkController;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.params.ModifiableSolrParams;
@@ -334,8 +335,13 @@ public class PeerSyncWithLeader implements SolrMetricProducer {
   private NamedList<Object> request(ModifiableSolrParams params, String onFail) {
     try {
       QueryRequest request = new QueryRequest(params, SolrRequest.METHOD.POST);
-      request.setBasePath(leaderBaseUrl);
-      QueryResponse rsp = request.process(clientToLeader, coreName);
+      QueryResponse rsp =
+          ClientUtils.requestWithUrl(
+              leaderBaseUrl,
+              clientToLeader,
+              (c) -> {
+                return request.process(c, coreName);
+              });
       Exception exception = rsp.getException();
       if (exception != null) {
         throw new SolrException(SolrException.ErrorCode.SERVER_ERROR, onFail);

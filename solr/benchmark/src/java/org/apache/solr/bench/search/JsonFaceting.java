@@ -26,6 +26,7 @@ import org.apache.solr.bench.BaseBenchState;
 import org.apache.solr.bench.Docs;
 import org.apache.solr.bench.MiniClusterState;
 import org.apache.solr.client.solrj.request.QueryRequest;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -181,10 +182,14 @@ public class JsonFaceting {
       BenchState.ThreadState threadState)
       throws Exception {
     QueryRequest queryRequest = new QueryRequest(state.params);
-    queryRequest.setBasePath(
-        miniClusterState.nodes.get(threadState.random.nextInt(state.nodeCount)));
-
-    NamedList<Object> result = miniClusterState.client.request(queryRequest, state.collection);
+    final var randomUrl = miniClusterState.nodes.get(threadState.random.nextInt(state.nodeCount));
+    NamedList<Object> result =
+        ClientUtils.requestWithUrl(
+            randomUrl,
+            miniClusterState.client,
+            (c) -> {
+              return c.request(queryRequest, state.collection);
+            });
 
     // MiniClusterState.log("result: " + result);
 

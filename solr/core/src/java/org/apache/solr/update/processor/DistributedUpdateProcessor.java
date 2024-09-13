@@ -33,6 +33,7 @@ import org.apache.solr.client.solrj.SolrRequest.METHOD;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.request.GenericSolrRequest;
 import org.apache.solr.client.solrj.response.SimpleSolrResponse;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.SolrInputDocument;
@@ -692,8 +693,13 @@ public class DistributedUpdateProcessor extends UpdateRequestProcessor {
 
     NamedList<Object> rsp;
     try {
-      ur.setBasePath(leaderUrl);
-      rsp = updateShardHandler.getUpdateOnlyHttpClient().request(ur);
+      rsp =
+          ClientUtils.requestWithUrl(
+              leaderUrl,
+              updateShardHandler.getUpdateOnlyHttpClient(),
+              (c) -> {
+                return c.request(ur);
+              });
     } catch (SolrServerException e) {
       throw new SolrException(
           ErrorCode.SERVER_ERROR,

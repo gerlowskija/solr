@@ -24,6 +24,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.request.CollectionAdminRequest;
 import org.apache.solr.client.solrj.request.QueryRequest;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
@@ -58,6 +59,7 @@ public class SimpleSearch {
     AtomicLong err = new AtomicLong();
 
     QueryRequest q = new QueryRequest(new SolrQuery("q", "id:0")); // no match is OK
+    String qUrl;
 
     @Setup(Level.Trial)
     public void setupTrial(MiniClusterState.MiniClusterBenchState miniClusterState)
@@ -65,8 +67,7 @@ public class SimpleSearch {
       miniClusterState.setUseHttp1(useHttp1);
       miniClusterState.startMiniCluster(1);
       miniClusterState.createCollection(COLLECTION, 1, 1);
-      String base = miniClusterState.nodes.get(0);
-      q.setBasePath(base);
+      qUrl = miniClusterState.nodes.get(0);
     }
 
     @Setup(Level.Iteration)
@@ -74,8 +75,12 @@ public class SimpleSearch {
         throws SolrServerException, IOException {
       // Reload the collection/core to drop existing caches
       CollectionAdminRequest.Reload reload = CollectionAdminRequest.reloadCollection(COLLECTION);
-      reload.setBasePath(miniClusterState.nodes.get(0));
-      miniClusterState.client.request(reload);
+      ClientUtils.requestWithUrl(
+          miniClusterState.nodes.get(0),
+          miniClusterState.client,
+          (c) -> {
+            return c.request(reload);
+          });
 
       total = new AtomicLong();
       err = new AtomicLong();
@@ -147,12 +152,22 @@ public class SimpleSearch {
       BenchState benchState, MiniClusterState.MiniClusterBenchState miniClusterState, Blackhole bh)
       throws SolrServerException, IOException {
     if (benchState.strict) {
-      return miniClusterState.client.request(benchState.q, COLLECTION);
+      return ClientUtils.requestWithUrl(
+          benchState.qUrl,
+          miniClusterState.client,
+          (c) -> {
+            return c.request(benchState.q, COLLECTION);
+          });
     }
 
     // non strict run ignores exceptions
     try {
-      return miniClusterState.client.request(benchState.q, COLLECTION);
+      return ClientUtils.requestWithUrl(
+          benchState.qUrl,
+          miniClusterState.client,
+          (c) -> {
+            return c.request(benchState.q, COLLECTION);
+          });
     } catch (SolrServerException e) {
       bh.consume(e);
       benchState.err.getAndIncrement();

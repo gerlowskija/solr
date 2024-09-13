@@ -100,6 +100,7 @@ import org.apache.solr.client.solrj.impl.Http2SolrClient;
 import org.apache.solr.client.solrj.impl.HttpClientUtil;
 import org.apache.solr.client.solrj.impl.InputStreamResponseParser;
 import org.apache.solr.client.solrj.request.QueryRequest;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.cloud.CloudDescriptor;
 import org.apache.solr.cloud.ZkController;
 import org.apache.solr.common.SolrException;
@@ -376,10 +377,14 @@ public class IndexFetcher {
     params.set(CommonParams.WT, JAVABIN);
     params.set(CommonParams.QT, ReplicationHandler.PATH);
     QueryRequest req = new QueryRequest(params);
-    req.setBasePath(leaderBaseUrl);
     // TODO modify to use shardhandler
     try {
-      return solrClient.request(req, leaderCoreName);
+      return ClientUtils.requestWithUrl(
+          leaderBaseUrl,
+          solrClient,
+          (c) -> {
+            return c.request(req, leaderCoreName);
+          });
     } catch (SolrServerException e) {
       throw new SolrException(ErrorCode.SERVER_ERROR, e.getMessage(), e);
     }
@@ -397,10 +402,15 @@ public class IndexFetcher {
     params.set(CommonParams.WT, JAVABIN);
     params.set(CommonParams.QT, ReplicationHandler.PATH);
     QueryRequest req = new QueryRequest(params);
-    req.setBasePath(leaderBaseUrl);
     // TODO modify to use shardhandler
     try {
-      NamedList<?> response = solrClient.request(req, leaderCoreName);
+      NamedList<?> response =
+          ClientUtils.requestWithUrl(
+              leaderBaseUrl,
+              solrClient,
+              (c) -> {
+                return c.request(req, leaderCoreName);
+              });
 
       List<Map<String, Object>> files = (List<Map<String, Object>>) response.get(CMD_GET_FILE_LIST);
       if (files != null) filesToDownload = Collections.synchronizedList(files);
@@ -1985,9 +1995,14 @@ public class IndexFetcher {
       try {
         QueryRequest req = new QueryRequest(params);
         req.setResponseParser(new InputStreamResponseParser(FILE_STREAM));
-        req.setBasePath(leaderBaseUrl);
         if (useExternalCompression) req.addHeader("Accept-Encoding", "gzip");
-        response = solrClient.request(req, leaderCoreName);
+        response =
+            ClientUtils.requestWithUrl(
+                leaderBaseUrl,
+                solrClient,
+                (c) -> {
+                  c.request(req, leaderCoreName);
+                });
         final var responseStatus = (Integer) response.get("responseStatus");
         is = (InputStream) response.get("stream");
 
@@ -2132,9 +2147,13 @@ public class IndexFetcher {
     params.set(CommonParams.QT, ReplicationHandler.PATH);
 
     QueryRequest request = new QueryRequest(params);
-    request.setBasePath(leaderBaseUrl);
     // TODO use shardhandler
-    return solrClient.request(request, leaderCoreName);
+    return ClientUtils.requestWithUrl(
+        leaderBaseUrl,
+        solrClient,
+        (c) -> {
+          return c.request(request, leaderCoreName);
+        });
   }
 
   public void destroy() {

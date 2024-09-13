@@ -37,6 +37,7 @@ import org.apache.solr.client.solrj.request.HealthCheckRequest;
 import org.apache.solr.client.solrj.request.QueryRequest;
 import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
@@ -235,9 +236,12 @@ public class TestUserManagedReplicationWithAuth extends SolrTestCaseJ4 {
     disablePollParams.set(CommonParams.QT, ReplicationHandler.PATH);
     QueryRequest req = new QueryRequest(disablePollParams);
     withBasicAuth(req);
-    req.setBasePath(buildUrl(Jetty.getLocalPort()));
-
-    solrClient.request(req, DEFAULT_TEST_CORENAME);
+    ClientUtils.requestWithUrl(
+        buildUrl(Jetty.getLocalPort()),
+        solrClient,
+        (c) -> {
+          return c.request(req, DEFAULT_TEST_CORENAME);
+        });
   }
 
   private void pullIndexFromTo(
@@ -246,8 +250,12 @@ public class TestUserManagedReplicationWithAuth extends SolrTestCaseJ4 {
     String srcUrl = buildUrl(srcSolr.getLocalPort()) + "/" + DEFAULT_TEST_CORENAME;
     String destUrl = buildUrl(destSolr.getLocalPort()) + "/" + DEFAULT_TEST_CORENAME;
     QueryRequest req = getQueryRequestForFetchIndex(authEnabled, srcUrl);
-    req.setBasePath(buildUrl(destSolr.getLocalPort()));
-    followerClient.request(req, DEFAULT_TEST_CORENAME);
+    ClientUtils.requestWithUrl(
+        buildUrl(destSolr.getLocalPort()),
+        followerClient,
+        (c) -> {
+          return c.request(req, DEFAULT_TEST_CORENAME);
+        });
   }
 
   private QueryRequest getQueryRequestForFetchIndex(boolean authEnabled, String srcUrl) {

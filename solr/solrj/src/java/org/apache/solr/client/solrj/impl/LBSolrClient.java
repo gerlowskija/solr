@@ -486,7 +486,6 @@ public abstract class LBSolrClient extends SolrClient {
     Exception ex = null;
     try {
       rsp.server = baseUrl.toString();
-      req.getRequest().setBasePath(baseUrl.getBaseUrl());
       rsp.rsp = getClient(baseUrl).request(req.getRequest(), baseUrl.getCore());
       if (isZombie) {
         zombieServers.remove(baseUrl.toString());
@@ -585,7 +584,6 @@ public abstract class LBSolrClient extends SolrClient {
     final Endpoint zombieEndpoint = zombieServer.getEndpoint();
     try {
       QueryRequest queryRequest = new QueryRequest(solrQuery);
-      queryRequest.setBasePath(zombieEndpoint.getBaseUrl());
       // First the one on the endpoint, then the default collection
       final String effectiveCollection =
           Objects.requireNonNullElse(zombieEndpoint.getCore(), getDefaultCollection());
@@ -687,7 +685,6 @@ public abstract class LBSolrClient extends SolrClient {
       final var endpoint = wrapper.getEndpoint();
       try {
         ++numServersTried;
-        request.setBasePath(endpoint.getBaseUrl());
         // Choose the endpoint's core/collection over any specified by the user
         final var effectiveCollection =
             endpoint.getCore() == null ? collection : endpoint.getCore();
@@ -721,7 +718,6 @@ public abstract class LBSolrClient extends SolrClient {
           || (justFailed != null && justFailed.containsKey(endpoint.getUrl()))) continue;
       try {
         ++numServersTried;
-        request.setBasePath(endpoint.getBaseUrl());
         final String effectiveCollection =
             endpoint.getCore() == null ? collection : endpoint.getCore();
         NamedList<Object> rsp = getClient(endpoint).request(request, effectiveCollection);
