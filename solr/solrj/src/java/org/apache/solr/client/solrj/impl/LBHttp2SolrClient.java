@@ -220,7 +220,7 @@ public class LBHttp2SolrClient extends LBSolrClient {
       RetryListener listener) {
     rsp.server = endpoint.toString();
     CompletableFuture<NamedList<Object>> future =
-        ((Http2SolrClient) getClient(endpoint)).requestAsync(req.getRequest());
+        ((URLReplacingSolrClient) getClient(endpoint)).requestAsync(req.getRequest());
     future.whenComplete(
         (result, throwable) -> {
           if (!future.isCompletedExceptionally()) {

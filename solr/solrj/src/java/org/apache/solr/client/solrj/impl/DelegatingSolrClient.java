@@ -17,6 +17,7 @@
 package org.apache.solr.client.solrj.impl;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -46,6 +47,27 @@ public class DelegatingSolrClient extends SolrClient {
   public NamedList<Object> request(final SolrRequest<?> request, String collection)
       throws SolrServerException, IOException {
     return delegate.request(request, collection);
+  }
+
+  public CompletableFuture<NamedList<Object>> requestAsync(SolrRequest<?> request, String collection) {
+    // TODO This is a bit of a hack to expose the very useful 'requestAsync' methods available on
+    // only some SolrClient implementations.  It'd be much cleaner if this async method was either
+    // available on SolrClient itself, or attached to a separate interface. Absent that, this code
+    // can be improved once the deprecated HttpSolrClient is gone by changing DelegatingSolrClient
+    // to extend HttpSolrClientBase so that it gets 'requestAsync' "naturally".
+    if (delegate instanceof HttpSolrClientBase) {
+      return ((HttpSolrClientBase) delegate).requestAsync(request, collection);
+    } else {
+      throw new IllegalStateException(
+          "DelegatingSolrClient cannot make asynchronous requests if the wrapped 'delegate' ["
+              + delegate
+              + "] doesn't support them");
+    }
+  }
+
+  // TODO see comment on requestAsync(SolrRequest, String) above
+  public CompletableFuture<NamedList<Object>> requestAsync(SolrRequest<?> request) {
+    return requestAsync(request, null);
   }
 
   public String getDefaultCollection() {
