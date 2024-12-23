@@ -31,7 +31,6 @@ import jakarta.ws.rs.ext.ContextResolver;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.time.Instant;
-
 import org.apache.solr.common.util.NamedList;
 
 /** Customizes the ObjectMapper settings used for serialization/deserialization in Jersey */
@@ -79,10 +78,13 @@ public class SolrJacksonMapper implements ContextResolver<ObjectMapper> {
   }
 
   public static class InstantSerializer extends StdSerializer<Instant> {
-    public InstantSerializer(Class<Instant> nlClazz) { super(nlClazz); }
+    public InstantSerializer(Class<Instant> nlClazz) {
+      super(nlClazz);
+    }
 
     @Override
-    public void serialize(Instant value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+    public void serialize(Instant value, JsonGenerator gen, SerializerProvider provider)
+        throws IOException {
       gen.writeObject(value.toString());
     }
   }
@@ -94,7 +96,8 @@ public class SolrJacksonMapper implements ContextResolver<ObjectMapper> {
     }
 
     @Override
-    public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+    public Instant deserialize(JsonParser p, DeserializationContext ctxt)
+        throws IOException, JacksonException {
       return Instant.parse(p.getText());
     }
   }

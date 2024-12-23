@@ -22,8 +22,10 @@ import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import org.apache.solr.JSONTestUtil;
@@ -101,6 +103,8 @@ public class JSONWriterTest extends SolrTestCaseJ4 {
     rsp.add("byte", (byte) -3);
     rsp.add("short", (short) -4);
     rsp.add("bytes", "abc".getBytes(StandardCharsets.UTF_8));
+    rsp.add("date", new Date(123456789));
+    rsp.add("instant", Instant.ofEpochMilli(123456789));
 
     w.write(buf, req, rsp);
 
@@ -123,7 +127,17 @@ public class JSONWriterTest extends SolrTestCaseJ4 {
       fail("unexpected namedListStyle=" + namedListStyle);
     }
 
-    jsonEq("{" + expectedNLjson + ",\"byte\":-3,\"short\":-4,\"bytes\":\"YWJj\"}", buf.toString());
+    final String expectedDateStr =
+        "1970-01-02T10:17:36.789Z"; // 123456789L epoch-time in ISO_INSTANT format
+    jsonEq(
+        "{"
+            + expectedNLjson
+            + ",\"byte\":-3,\"short\":-4,\"bytes\":\"YWJj\",\"date\":\""
+            + expectedDateStr
+            + "\",\"instant\":\""
+            + expectedDateStr
+            + "\"}",
+        buf.toString());
     req.close();
   }
 

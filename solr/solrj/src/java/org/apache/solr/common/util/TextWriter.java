@@ -75,7 +75,7 @@ public interface TextWriter extends PushWriter {
     } else if (val instanceof Date) {
       writeDate(name, (Date) val);
     } else if (val instanceof Instant) {
-      // TODO solve the problem here, and then look into JavabinCodec or whatever
+      writeInstant(name, (Instant) val);
     } else if (val instanceof NamedList) {
       writeNamedList(name, (NamedList) val);
     } else if (val instanceof Path) {
@@ -195,6 +195,10 @@ public interface TextWriter extends PushWriter {
 
   default void writeDate(String name, Date val) throws IOException {
     writeDate(name, val.toInstant().toString());
+  }
+
+  default void writeInstant(String name, Instant val) throws IOException {
+    writeDate(name, val.toString());
   }
 
   default void writeByteArr(String name, byte[] buf, int offset, int len) throws IOException {

@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -102,6 +103,7 @@ public class JavaBinCodec implements PushWriter {
       ENUM_FIELD_VALUE = 18,
       MAP_ENTRY = 19,
       UUID = 20, // This is reserved to be used only in LogCodec
+      INSTANT = 21,
       // types that combine tag + length (or other info) in a single byte
       TAG_AND_LEN = (byte) (1 << 5),
       STR = (byte) (1 << 5),
@@ -312,6 +314,8 @@ public class JavaBinCodec implements PushWriter {
         return null;
       case DATE:
         return new Date(dis.readLong());
+      case INSTANT:
+        return Instant.ofEpochMilli(dis.readLong());
       case INT:
         return dis.readInt();
       case BOOL_TRUE:
@@ -1088,6 +1092,10 @@ public class JavaBinCodec implements PushWriter {
     } else if (val instanceof Date) {
       daos.writeByte(DATE);
       daos.writeLong(((Date) val).getTime());
+      return true;
+    } else if (val instanceof Instant) {
+      daos.writeByte(INSTANT);
+      daos.writeLong(((Instant) val).toEpochMilli());
       return true;
     } else if (val instanceof Boolean) {
       writeBoolean((Boolean) val);

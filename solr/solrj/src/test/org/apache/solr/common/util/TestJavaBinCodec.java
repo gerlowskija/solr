@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -128,6 +129,7 @@ public class TestJavaBinCodec extends SolrTestCaseJ4 {
 
     types.add((float) 6);
     types.add(new Date(0));
+    types.add(Instant.ofEpochMilli(0));
 
     Map<Integer, Integer> map = new HashMap<>();
     map.put(1, 2);
@@ -188,6 +190,10 @@ public class TestJavaBinCodec extends SolrTestCaseJ4 {
 
   @Test
   public void testBackCompat() throws IOException {
+    // TODO JEGERLOW I _think_ this test is failing because I've added a type+val to the
+    // "generateOutputTypes" NL, and it's being compared to a static file here that hasn't been
+    // updated.  I'm not sure what the intention is around this file, but I'll look to see if it's
+    // reasonable to be update.
     try (InputStream is = getClass().getResourceAsStream(SOLRJ_JAVABIN_BACKCOMPAT_BIN);
         JavaBinCodec javabin =
             new JavaBinCodec() {
