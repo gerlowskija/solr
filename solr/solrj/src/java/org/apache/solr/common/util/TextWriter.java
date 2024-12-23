@@ -22,6 +22,7 @@ import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
@@ -73,6 +74,8 @@ public interface TextWriter extends PushWriter {
       writeBool(name, ((AtomicBoolean) val).get());
     } else if (val instanceof Date) {
       writeDate(name, (Date) val);
+    } else if (val instanceof Instant) {
+      // TODO solve the problem here, and then look into JavabinCodec or whatever
     } else if (val instanceof NamedList) {
       writeNamedList(name, (NamedList) val);
     } else if (val instanceof Path) {

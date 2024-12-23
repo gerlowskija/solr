@@ -23,6 +23,7 @@ import static org.apache.lucene.index.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -298,7 +299,7 @@ public class GetSegmentData extends JerseyResource implements SegmentsApi {
     segmentInfo.sizeInBytes = segmentCommitInfo.sizeInBytes();
     segmentInfo.size = segmentCommitInfo.info.maxDoc();
     Long timestamp = Long.parseLong(segmentCommitInfo.info.getDiagnostics().get("timestamp"));
-    segmentInfo.age = new Date(timestamp);
+    segmentInfo.age = Instant.ofEpochMilli(timestamp);
     segmentInfo.source = segmentCommitInfo.info.getDiagnostics().get("source");
     segmentInfo.version = segmentCommitInfo.info.getVersion().toString();
 

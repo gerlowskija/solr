@@ -18,14 +18,20 @@
 package org.apache.solr.jersey;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import jakarta.ws.rs.ext.ContextResolver;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
+import java.time.Instant;
+
 import org.apache.solr.common.util.NamedList;
 
 /** Customizes the ObjectMapper settings used for serialization/deserialization in Jersey */
@@ -47,6 +53,8 @@ public class SolrJacksonMapper implements ContextResolver<ObjectMapper> {
   private static ObjectMapper createObjectMapper() {
     final SimpleModule customTypeModule = new SimpleModule();
     customTypeModule.addSerializer(new NamedListSerializer(NamedList.class));
+    customTypeModule.addSerializer(new InstantSerializer(Instant.class));
+    customTypeModule.addDeserializer(Instant.class, new InstantDeserializer(Instant.class));
 
     return new ObjectMapper()
         .setSerializationInclusion(JsonInclude.Include.NON_NULL)
@@ -67,6 +75,27 @@ public class SolrJacksonMapper implements ContextResolver<ObjectMapper> {
     public void serialize(NamedList value, JsonGenerator gen, SerializerProvider provider)
         throws IOException {
       gen.writeObject(value.asShallowMap());
+    }
+  }
+
+  public static class InstantSerializer extends StdSerializer<Instant> {
+    public InstantSerializer(Class<Instant> nlClazz) { super(nlClazz); }
+
+    @Override
+    public void serialize(Instant value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+      gen.writeObject(value.toString());
+    }
+  }
+
+  public static class InstantDeserializer extends StdDeserializer<Instant> {
+
+    public InstantDeserializer(Class<Instant> instantClazz) {
+      super(instantClazz);
+    }
+
+    @Override
+    public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+      return Instant.parse(p.getText());
     }
   }
 }
