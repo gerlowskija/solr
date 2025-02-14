@@ -190,10 +190,12 @@ public class DistribFileStore implements FileStore {
         final var metadataRequest = new FileStoreApi.GetFile(getMetaPath());
         final var client = coreContainer.getSolrClientCache().getHttpSolrClient(baseUrl);
         final var response = metadataRequest.process(client);
-        metadata =
-            Utils.newBytesConsumer((int) MAX_PKG_SIZE)
-                .accept(response.getResponseStreamIfSuccessful());
-        m = (Map<?, ?>) Utils.fromJSON(metadata.array(), metadata.arrayOffset(), metadata.limit());
+        try (final var responseStream = response.getResponseStreamIfSuccessful()) {
+          metadata = Utils.newBytesConsumer((int) MAX_PKG_SIZE).accept(responseStream);
+          m =
+              (Map<?, ?>)
+                  Utils.fromJSON(metadata.array(), metadata.arrayOffset(), metadata.limit());
+        }
       } catch (Exception e) {
         throw new SolrException(SolrException.ErrorCode.SERVER_ERROR, "Error fetching metadata", e);
       } finally {
@@ -386,7 +388,7 @@ public class DistribFileStore implements FileStore {
           pullFileRequest.setGetFrom(nodeToFetchFrom);
           final var client = coreContainer.getSolrClientCache().getHttpSolrClient(baseUrl);
           // fire and forget
-          pullFileRequest.process(client);
+          pullFileRequest.process(client).getParsed();
         } catch (Exception e) {
           log.info("Node: {} failed to respond for file fetch notification", node, e);
           // ignore the exception
