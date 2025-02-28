@@ -1031,7 +1031,6 @@ public class CollectionsHandler extends RequestHandlerBase implements Permission
         (req, rsp, h) -> {
           Map<String, Object> m =
               copy(req.getParams(), null, CollectionAdminRequest.MODIFIABLE_COLLECTION_PROPERTIES);
-          copyPropertiesWithPrefix(req.getParams(), m, PROPERTY_PREFIX);
           if (m.isEmpty()) {
             throw new SolrException(
                 ErrorCode.BAD_REQUEST,

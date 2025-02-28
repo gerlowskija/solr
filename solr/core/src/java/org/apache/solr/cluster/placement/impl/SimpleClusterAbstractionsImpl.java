@@ -35,7 +35,6 @@ import org.apache.solr.cluster.SolrCollection;
 import org.apache.solr.common.cloud.ClusterState;
 import org.apache.solr.common.cloud.DocCollection;
 import org.apache.solr.common.cloud.Slice;
-import org.apache.solr.common.params.CollectionAdminParams;
 import org.apache.solr.common.util.Pair;
 
 /**
@@ -209,11 +208,6 @@ class SimpleClusterAbstractionsImpl {
           + ", docCollection="
           + docCollection
           + '}';
-    }
-
-    @Override
-    public String getCustomProperty(String customPropertyName) {
-      return docCollection.getStr(CollectionAdminParams.PROPERTY_PREFIX + customPropertyName);
     }
   }
 

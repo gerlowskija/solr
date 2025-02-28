@@ -424,10 +424,10 @@ At least one `_attribute_` parameter is required.
 +
 The attributes that can be modified are:
 
-* `replicationFactor`
 * `collection.configName`
 * `readOnly`
-* other custom properties that use a `property.` prefix
+* `replicationFactor`
+* `perReplicaState`
 +
 See the <<create,CREATE action>> section above for details on these attributes.
 

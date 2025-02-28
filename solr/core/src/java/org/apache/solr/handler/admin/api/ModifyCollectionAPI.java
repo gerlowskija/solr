@@ -21,7 +21,6 @@ import static org.apache.solr.common.params.CollectionAdminParams.COLLECTION;
 import static org.apache.solr.common.params.CollectionAdminParams.COLL_CONF;
 import static org.apache.solr.common.params.CommonParams.ACTION;
 import static org.apache.solr.handler.ClusterAPI.wrapParams;
-import static org.apache.solr.handler.api.V2ApiUtils.flattenMapWithPrefix;
 import static org.apache.solr.security.PermissionNameProvider.Name.COLL_EDIT_PERM;
 
 import java.util.HashMap;
@@ -64,10 +63,6 @@ public class ModifyCollectionAPI {
     if (v2Body.config != null) {
       v1Params.remove("config");
       v1Params.put(COLL_CONF, v2Body.config);
-    }
-    if (v2Body.properties != null && !v2Body.properties.isEmpty()) {
-      v1Params.remove("properties");
-      flattenMapWithPrefix(v2Body.properties, v1Params, "property.");
     }
 
     collectionsHandler.handleRequestBody(wrapParams(obj.getRequest(), v1Params), obj.getResponse());

@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.solr.client.solrj.SolrResponse;
 import org.apache.solr.client.solrj.cloud.DistribStateManager;
-import org.apache.solr.client.solrj.request.CollectionAdminRequest;
 import org.apache.solr.client.solrj.request.QueryRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.cloud.DistributedClusterStateUpdater;
@@ -55,6 +54,7 @@ import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.Utils;
+import org.apache.solr.handler.admin.api.CollectionProperty;
 import org.apache.solr.util.TestInjection;
 import org.apache.solr.util.TimeOut;
 import org.apache.zookeeper.CreateMode;
@@ -96,7 +96,7 @@ public class ReindexCollectionCmd implements CollApiCmds.CollectionApiCommand {
   public static final String TARGET = "target";
   public static final String TARGET_COL_PREFIX = ".rx_";
   public static final String CHK_COL_PREFIX = ".rx_ck_";
-  public static final String REINDEXING_STATE = CollectionAdminRequest.PROPERTY_PREFIX + "rx";
+  public static final String REINDEXING_STATE = "reindexingStatus";
 
   public static final String STATE = "state";
   public static final String PHASE = "phase";
@@ -546,24 +546,8 @@ public class ReindexCollectionCmd implements CollApiCmds.CollectionApiCommand {
         }
       }
       // 9. set FINISHED state on the target and clear the state on the source
-      ZkNodeProps props =
-          new ZkNodeProps(
-              Overseer.QUEUE_OPERATION,
-              CollectionParams.CollectionAction.MODIFYCOLLECTION.toLower(),
-              ZkStateReader.COLLECTION_PROP,
-              targetCollection,
-              REINDEXING_STATE,
-              State.FINISHED.toLower());
-      if (ccc.getDistributedClusterStateUpdater().isDistributedStateUpdate()) {
-        ccc.getDistributedClusterStateUpdater()
-            .doSingleStateUpdate(
-                DistributedClusterStateUpdater.MutatingCommand.CollectionModifyCollection,
-                props,
-                ccc.getSolrCloudManager(),
-                ccc.getZkStateReader());
-      } else {
-        ccc.offerStateUpdate(props);
-      }
+      CollectionProperty.modifyCollectionProperty(
+          ccc.getCoreContainer(), targetCollection, REINDEXING_STATE, State.FINISHED.toLower());
 
       reindexingState.put(STATE, State.FINISHED.toLower());
       reindexingState.put(PHASE, "done");

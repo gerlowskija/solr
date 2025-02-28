@@ -112,11 +112,8 @@ class ClusterAbstractionsForTest {
     /** Map from {@link Shard#getShardName()} to {@link Shard} */
     private Map<String, Shard> shards;
 
-    private final Map<String, String> customProperties;
-
-    SolrCollectionImpl(String collectionName, Map<String, String> customProperties) {
+    SolrCollectionImpl(String collectionName) {
       this.collectionName = collectionName;
-      this.customProperties = customProperties;
     }
 
     /**
@@ -150,11 +147,6 @@ class ClusterAbstractionsForTest {
     @Override
     public Set<String> getShardNames() {
       return shards.keySet();
-    }
-
-    @Override
-    public String getCustomProperty(String customPropertyName) {
-      return customProperties.get(customPropertyName);
     }
   }
 

@@ -16,7 +16,6 @@
  */
 package org.apache.solr.client.solrj.request.beans;
 
-import java.util.Map;
 import org.apache.solr.common.annotation.JsonProperty;
 import org.apache.solr.common.util.ReflectMapWriter;
 
@@ -26,8 +25,6 @@ public class ModifyCollectionPayload implements ReflectMapWriter {
   @JsonProperty public Boolean readOnly;
 
   @JsonProperty public String config;
-
-  @JsonProperty public Map<String, Object> properties;
 
   @JsonProperty public String async;
 }

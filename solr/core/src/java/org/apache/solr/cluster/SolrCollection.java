@@ -19,7 +19,6 @@ package org.apache.solr.cluster;
 
 import java.util.Iterator;
 import java.util.Set;
-import org.apache.solr.cluster.placement.AttributeFetcher;
 import org.apache.solr.cluster.placement.PlacementPlugin;
 import org.apache.solr.cluster.placement.PlacementRequest;
 
@@ -59,26 +58,6 @@ public interface SolrCollection {
    *     internal map so should not be modified.
    */
   Set<String> getShardNames();
-
-  /**
-   * Returns the value of a custom property name set on the {@link SolrCollection} or {@code null}
-   * when no such property was set. Properties are set through the Collection API. See for example
-   * {@code MODIFYCOLLECTION} in the Solr reference guide.
-   *
-   * <p><b>{@link PlacementPlugin} related note:</b>
-   *
-   * <p>Using custom properties in conjunction with ad hoc {@link PlacementPlugin} code allows
-   * customizing placement decisions per collection.
-   *
-   * <p>For example if a collection is to be placed only on nodes using located in a specific
-   * availability zone, it can be identified as such using some custom property (collection property
-   * could for example be called "availabilityZone" and have value "az1" in that case), and the
-   * placement plugin (implementing {@link PlacementPlugin}) would then {@link
-   * AttributeFetcher#requestNodeSystemProperty(String)} for that property from all nodes and only
-   * place replicas of this collection on {@link Node}'s for which this attribute is non empty and
-   * equal.
-   */
-  String getCustomProperty(String customPropertyName);
 
   /*
    * There might be missing pieces here (and in other classes in this package) and these would have to be added when

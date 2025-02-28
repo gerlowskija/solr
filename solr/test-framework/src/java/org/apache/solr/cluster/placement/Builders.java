@@ -231,17 +231,11 @@ public class Builders {
   public static class CollectionBuilder {
     private final String collectionName;
     private List<ShardBuilder> shardBuilders = new ArrayList<>();
-    private Map<String, String> customProperties = new HashMap<>();
     int replicaNumber = 0; // global replica numbering for the collection
     private CollectionMetricsBuilder collectionMetricsBuilder = new CollectionMetricsBuilder();
 
     public CollectionBuilder(String collectionName) {
       this.collectionName = collectionName;
-    }
-
-    public CollectionBuilder addCustomProperty(String name, String value) {
-      customProperties.put(name, value);
-      return this;
     }
 
     public CollectionMetricsBuilder getCollectionMetricsBuilder() {
@@ -473,7 +467,7 @@ public class Builders {
 
     public SolrCollection build() {
       ClusterAbstractionsForTest.SolrCollectionImpl solrCollection =
-          new ClusterAbstractionsForTest.SolrCollectionImpl(collectionName, customProperties);
+          new ClusterAbstractionsForTest.SolrCollectionImpl(collectionName);
 
       final LinkedHashMap<String, Shard> shards = new LinkedHashMap<>();
 

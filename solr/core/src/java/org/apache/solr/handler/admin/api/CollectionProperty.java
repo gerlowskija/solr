@@ -55,7 +55,7 @@ public class CollectionProperty extends AdminAPIBase implements CollectionProper
     }
     final SolrJerseyResponse response = instantiateJerseyResponse(SolrJerseyResponse.class);
     recordCollectionForLogAndTracing(collName, solrQueryRequest);
-    modifyCollectionProperty(collName, propName, requestBody.value);
+    modifyCollectionProperty(coreContainer, collName, propName, requestBody.value);
     return response;
   }
 
@@ -65,16 +65,18 @@ public class CollectionProperty extends AdminAPIBase implements CollectionProper
       throws Exception {
     final SolrJerseyResponse response = instantiateJerseyResponse(SolrJerseyResponse.class);
     recordCollectionForLogAndTracing(collName, solrQueryRequest);
-    modifyCollectionProperty(collName, propName, null);
+    modifyCollectionProperty(coreContainer, collName, propName, null);
     return response;
   }
 
-  private void modifyCollectionProperty(
-      String collection, String propertyName, String propertyValue /* May be null for deletes */)
+  public static void modifyCollectionProperty(
+      CoreContainer cc,
+      String collection,
+      String propertyName,
+      String propertyValue /* May be null for deletes */)
       throws IOException {
-    String resolvedCollection = coreContainer.getAliases().resolveSimpleAlias(collection);
-    CollectionProperties cp =
-        new CollectionProperties(coreContainer.getZkController().getZkClient());
+    String resolvedCollection = cc.getAliases().resolveSimpleAlias(collection);
+    final var cp = new CollectionProperties(cc.getZkController().getZkClient());
     cp.setCollectionProperty(resolvedCollection, propertyName, propertyValue);
   }
 }

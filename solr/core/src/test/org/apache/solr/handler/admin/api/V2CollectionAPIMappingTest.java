@@ -76,11 +76,7 @@ public class V2CollectionAPIMappingTest extends V2ApiMappingTest<CollectionsHand
                 + "'replicationFactor': 123, "
                 + "'readOnly': true, "
                 + "'config': 'techproducts_config', "
-                + "'async': 'requestTrackingId', "
-                + "'properties': {"
-                + "     'foo': 'bar', "
-                + "     'baz': 456 "
-                + "}"
+                + "'async': 'requestTrackingId'"
                 + "}}");
 
     assertEquals(
@@ -90,8 +86,6 @@ public class V2CollectionAPIMappingTest extends V2ApiMappingTest<CollectionsHand
     assertTrue(v1Params.getPrimitiveBool(ZkStateReader.READ_ONLY));
     assertEquals("techproducts_config", v1Params.get(COLL_CONF));
     assertEquals("requestTrackingId", v1Params.get(ASYNC));
-    assertEquals("bar", v1Params.get("property.foo"));
-    assertEquals(456, v1Params.getPrimitiveInt("property.baz"));
   }
 
   @Test
