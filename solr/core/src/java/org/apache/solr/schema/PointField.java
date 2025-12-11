@@ -231,7 +231,6 @@ public abstract class PointField extends NumericFieldType {
     return charsRef.get();
   }
 
-  @Override
   public String indexedToReadable(String indexedForm) {
     return indexedToReadable(new BytesRef(indexedForm));
   }
