@@ -230,7 +230,7 @@ public class IndexFetcherPacketProtocolTest extends SolrTestCaseJ4 {
     Directory dir =
         directoryFactory.get(
             h.getCore().getNewIndexDir(),
-            DirectoryFactory.DirContext.DEFAULT,
+            DirectoryFactory.DirContext.REPLICATION,
             h.getCore().getSolrConfig().indexConfig.lockType);
 
     try {
