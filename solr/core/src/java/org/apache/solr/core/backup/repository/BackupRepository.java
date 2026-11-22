@@ -17,9 +17,13 @@
 package org.apache.solr.core.backup.repository;
 
 import java.io.Closeable;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.NoSuchFileException;
 import java.util.Collection;
 import java.util.Optional;
 import org.apache.lucene.codecs.CodecUtil;
@@ -264,6 +268,58 @@ public interface BackupRepository extends NamedListInitializedPlugin, Closeable 
     try (IndexInput in = dir.openChecksumInput(fileName)) {
       return new Checksum(CodecUtil.retrieveChecksum(in), in.length());
     }
+  }
+
+  /** An action against a {@link BackupRepository} that may throw {@link IOException}. */
+  @FunctionalInterface
+  interface RepositoryAction {
+    void run(BackupRepository repository) throws IOException;
+  }
+
+  /**
+   * Runs {@code action}, re-running it if it fails with a retryable {@link IOException}.
+   *
+   * <p>The action may run more than once, so it must be safe to repeat: it should clean up any
+   * partial output itself (e.g. a half-written destination file) before or on failure.
+   *
+   * @param maxRetries number of re-runs after the first attempt; 0 means no retries
+   * @param backoffMillis delay before the first retry, doubled for each subsequent retry
+   *
+   * @see #isRetryable(IOException)
+   */
+  default void withRetries(int maxRetries, long backoffMillis, RepositoryAction action)
+      throws IOException {
+    long delay = backoffMillis;
+    for (int attempt = 0; ; attempt++) {
+      try {
+        action.run(this);
+        return;
+      } catch (IOException e) {
+        if (attempt >= maxRetries || !isRetryable(e) || Thread.currentThread().isInterrupted()) {
+          throw e;
+        }
+        try {
+          Thread.sleep(delay);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          e.addSuppressed(ie);
+          throw e;
+        }
+      }
+    }
+  }
+
+  /**
+   * Whether {@code e} is worth retrying. Permanent failures (corruption, missing or unwritable
+   * files) are not. Everything else, e.g. socket timeouts and connection resets, is. Repositories
+   * on stores with eventual consistency can override this to also retry on missing files.
+   */
+  default boolean isRetryable(IOException e) {
+    return !(e instanceof CorruptIndexException
+        || e instanceof FileNotFoundException
+        || e instanceof NoSuchFileException
+        || e instanceof FileAlreadyExistsException
+        || e instanceof AccessDeniedException);
   }
 
   /**

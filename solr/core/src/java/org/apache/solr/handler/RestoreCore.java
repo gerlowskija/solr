@@ -360,7 +360,9 @@ public class RestoreCore implements Callable<Boolean> {
     @Override
     public void repoCopy(String filename, Directory dest) throws IOException {
       String storedFileName = getStoredFilename(filename);
-      repository.copyIndexFileTo(this.indexURI, storedFileName, dest, filename);
+      repository.withRetries(3, 100, repo -> {
+        repo.copyIndexFileTo(this.indexURI, storedFileName, dest, filename);
+      });
     }
 
     @Override
